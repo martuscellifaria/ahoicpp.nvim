@@ -199,6 +199,19 @@ function M.create_about_ahoicpp()
 	vim.api.nvim_set_current_buf(buf)
 end
 
+function M.compile_app()
+	if M.file_exists("build.py") then
+		vim.notify("Starting compilation.")
+		vim.fn.jobstart({ "python", "build.py", "abcde" }, {
+			on_exit = function()
+				vim.notify("C++ app compilation finished.")
+			end,
+		})
+	else
+		vim.notify("build.py not found.")
+	end
+end
+
 function M.create_class(class_name, output_dir)
 	local header_path = output_dir .. "/" .. class_name .. ".h"
 	local header_template = M.get_header_template()
@@ -409,32 +422,20 @@ function M.write_file(path, content)
 end
 
 function M.file_exists(name)
-	local f = io.open(name, "r")
-	if f ~= nil then
-		io.close(f)
-		return true
-	end
-	return false
+	local file_exists = vim.uv.fs_stat(name) and vim.uv.fs_stat(name).type == "file"
+	return file_exists
 end
 
 function M.create_dir(path)
 	if M.dir_exists(path) then
 		return
 	end
-	local sep = package.config:sub(1, 1)
-	if sep == "\\" then
-		os.execute('mkdir "' .. path .. '"')
-	else
-		os.execute('mkdir -p "' .. path .. '"')
-	end
+	vim.fn.mkdir(path, "p")
 end
 
 function M.dir_exists(path)
-	local ok, err, code = os.rename(path .. "/test", path .. "/test")
-	if not ok then
-		return false
-	end
-	return true
+	local dir_exists = vim.uv.fs_stat(path) and vim.uv.fs_stat(path).type == "directory"
+	return dir_exists
 end
 
 function M.get_buildscript()
@@ -491,24 +492,27 @@ def run_app(build_type: str, version: str):
 
 
 if __name__ == '__main__':
-    print("Welcome to A.H.O.I. (Alex's Heavily Opinionated Interfaces) C++ build process. Pick your build or just press enter to go fast.")
-    print("[Enter]  FastBuild")
-    print("[0]      Release")
-    print("[1]      Debug")
-    build_selection = input()
+    if len(sys.argv) < 2:
+        print("Welcome to A.H.O.I. (Alex's Heavily Opinionated Interfaces) C++ build process. Pick your build or just press enter to go fast.")
+        print("[Enter]  FastBuild")
+        print("[0]      Release")
+        print("[1]      Debug")
+        build_selection = input()
 
-    match(build_selection):
-        case "":
-            run_app("Release", "")
-        case "0":
-            print("You selected Release. Please add a version to your build. Format recommended: XX.XX.XX.XX. Hint: you can just press enter and leave it empty.")
-            version = input()
-            run_app("Release", version)
-        case "1":
-            print("Build as Debug")
-            run_app("RelWithDebInfo", "")
-        case _:
-            print("Invalid input. Bye.")
+        match(build_selection):
+            case "":
+                run_app("Release", "")
+            case "0":
+                print("You selected Release. Please add a version to your build. Format recommended: XX.XX.XX.XX. Hint: you can just press enter and leave it empty.")
+                version = input()
+                run_app("Release", version)
+            case "1":
+                print("Build as Debug")
+                run_app("RelWithDebInfo", "")
+            case _:
+                print("Invalid input. Bye.")
+    else:
+        run_app("Release", "")
 ]]
 end
 
