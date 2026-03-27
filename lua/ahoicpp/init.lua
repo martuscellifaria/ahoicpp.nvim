@@ -203,8 +203,13 @@ function M.compile_app()
 	if M.file_exists("build.py") then
 		vim.notify("Starting compilation.")
 		vim.fn.jobstart({ "python", "build.py", "abcde" }, {
-			on_exit = function()
-				vim.notify("C++ app compilation finished.")
+			on_exit = function(_, code)
+				if code == 0 then
+					vim.notify("C++ app compilation finished.")
+				else
+					vim.notify("Failed to compile. Please read build.log")
+					vim.cmd("edit" .. "./build/build.log")
+				end
 			end,
 		})
 	else
@@ -439,9 +444,7 @@ function M.dir_exists(path)
 end
 
 function M.get_buildscript()
-	return [[
-
-import os
+	return [[import os
 import sys
 import platform
 
@@ -454,7 +457,7 @@ def run_cmake_on_linux(build_type: str, version: str):
         cd build &&
         cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
-        make -j8
+        make -j8 > build.log 2>&1
         """
     if (os.system("command -v ninja > /dev/null") == 0):
         build_command = f"""
@@ -462,9 +465,14 @@ def run_cmake_on_linux(build_type: str, version: str):
         cd build &&
         cmake .. -DCMAKE_BUILD_TYPE={build_type} -G Ninja -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
-        ninja
+        ninja > build.log 2>&1
         """
-    os.system(build_command)
+    
+    status = os.system(build_command)
+    if (status != 0):
+        exit_code = os.waitstatus_to_exitcode(status)
+        sys.exit(exit_code)
+    sys.exit(0)
 
 
 def run_cmake_on_windows(build_type: str, version: str):
@@ -477,7 +485,11 @@ def run_cmake_on_windows(build_type: str, version: str):
     build_command = f"""
     cd build && cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON;
     """
-    os.system(build_command)
+    status = os.system(build_command)
+    if (status != 0):
+        exit_code = os.waitstatus_to_exitcode(status)
+        sys.exit(exit_code)
+    sys.exit(0)
 
 
 def run_app(build_type: str, version: str):

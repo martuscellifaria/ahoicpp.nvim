@@ -26,6 +26,7 @@ return {
       vim.keymap.set('n', '<leader>cpa', ahoicpp.create_main_input, { desc = 'Create C++ [a]pp' })
       vim.keymap.set('n', '<leader>cph', ahoicpp.create_about_ahoicpp, { desc = 'Open AhoiCpp [h]elp' })
       vim.keymap.set('n', '<leader>cpm', ahoicpp.create_module_input, { desc = 'Create C++ [m]odule' })
+      vim.keymap.set('n', '<leader>cpc', ahoicpp.compile_app, { desc = '[c]ompile C++ app' })
     end,
   },
 }
