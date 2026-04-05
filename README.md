@@ -2,7 +2,7 @@
 
 A.H.O.I. Labs (Alex's Heavily Opinionated Interfaces) presents you `AhoiCpp`.
 
-AhoiCpp consists of an opinionated way of starting cross platform C++ projects in NeoVim.
+AhoiCpp consists of an opinionated way of starting cross platform C++ projects in Neovim.
 AhoiCpp lets you create classes, libraries and your own app entrypoint with the respective build process.
 
 AhoiCpp assumes you are using cmake and have python installed. If not, you should do it first.
@@ -11,9 +11,9 @@ AhoiCpp assumes you are using cmake and have python installed. If not, you shoul
 &nbsp;
 ## Installation
 
-If your NeoVim distro is based on Lazy ([lazy.nvim](https://github.com/folke/lazy.nvim), you can follow the steps below. Otherwise, you might have to do things manually, which is also perfectly fine.
+If your Neovim distro is based on Lazy ([lazy.nvim](https://github.com/folke/lazy.nvim), you can follow the steps below. Otherwise, you might have to do things manually, which is also perfectly fine.
 
-Create an `ahoicpp.lua` file with the following contents at the plugins directory of your neovim distro. For me, it is `kickstart`, so at `.config/nvim/lua/custom/plugins`
+Create an `ahoicpp.lua` file with the following contents at the plugins directory of your Neovim distro. For me, it is `kickstart`, so at `.config/nvim/lua/custom/plugins`
 
 ```lua
 return {
