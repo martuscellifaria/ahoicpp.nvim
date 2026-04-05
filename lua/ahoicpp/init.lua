@@ -1,10 +1,8 @@
 local M = {}
 
-function M.create_module_input()
-	local buf = vim.api.nvim_create_buf(false, true)
-
-	local width = 40
-	local height = 1
+local function create_dialog(dialog_title, dialog_width, dialog_height, buf)
+	local width = dialog_width
+	local height = dialog_height
 	local ui = vim.api.nvim_list_uis()[1]
 	local row = math.floor((ui.height - height) / 2)
 	local col = math.floor((ui.width - width) / 2)
@@ -17,9 +15,15 @@ function M.create_module_input()
 		col = col,
 		style = "minimal",
 		border = "rounded",
-		title = "Ahoi C++ Add Module",
+		title = dialog_title,
 		title_pos = "center",
 	})
+	return win
+end
+
+function M.create_module_input()
+	local buf = vim.api.nvim_create_buf(false, true)
+	local win = create_dialog("Ahoi C++ Add Module", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "Module Name: ")
@@ -51,24 +55,7 @@ end
 
 function M.create_class_input()
 	local buf = vim.api.nvim_create_buf(false, true)
-
-	local width = 40
-	local height = 1
-	local ui = vim.api.nvim_list_uis()[1]
-	local row = math.floor((ui.height - height) / 2)
-	local col = math.floor((ui.width - width) / 2)
-
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative = "editor",
-		width = width,
-		height = height,
-		row = row,
-		col = col,
-		style = "minimal",
-		border = "rounded",
-		title = "Ahoi C++ Add Class",
-		title_pos = "center",
-	})
+	local win = create_dialog("Ahoi C++ Add Class", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "Class Name: ")
@@ -100,24 +87,7 @@ end
 
 function M.create_main_input()
 	local buf = vim.api.nvim_create_buf(false, true)
-
-	local width = 40
-	local height = 1
-	local ui = vim.api.nvim_list_uis()[1]
-	local row = math.floor((ui.height - height) / 2)
-	local col = math.floor((ui.width - width) / 2)
-
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative = "editor",
-		width = width,
-		height = height,
-		row = row,
-		col = col,
-		style = "minimal",
-		border = "rounded",
-		title = "Ahoi C++ Add Main",
-		title_pos = "center",
-	})
+	local win = create_dialog("Ahoi C++ Add Main", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "App Name: ")
@@ -172,6 +142,7 @@ function M.create_about_ahoicpp()
 	})
 
 	local buf = vim.api.nvim_create_buf(false, true)
+	-- local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_name(buf, "HelpBuffer")
 
 	local width = 0
@@ -179,21 +150,8 @@ function M.create_about_ahoicpp()
 		width = math.max(width, #s)
 	end
 	local height = #lines
-	local ui = vim.api.nvim_list_uis()[1]
-	local row = math.floor((ui.height - height) / 2)
-	local col = math.floor((ui.width - width) / 2)
 
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative = "editor",
-		width = width,
-		height = height,
-		row = row,
-		col = col,
-		style = "minimal",
-		border = "rounded",
-		title = "About Ahoi C++",
-		title_pos = "center",
-	})
+	local win = create_dialog("Ahoi C++ Add Main", width, height, buf)
 
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.api.nvim_set_current_buf(buf)
