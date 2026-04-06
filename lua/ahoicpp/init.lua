@@ -30,7 +30,6 @@ end
 local M = {}
 
 function M.setup_ahoicpp()
-	vim.keymap.set("n", "<leader>cpp", M.create_class_input, { desc = "Create C++ [c]lass" })
 	vim.keymap.set("n", "<leader>cpa", M.create_main_input, { desc = "Create C++ [a]pp" })
 	vim.keymap.set("n", "<leader>cph", M.create_about_ahoicpp, { desc = "Open Ahoicpp [h]elp" })
 	vim.keymap.set("n", "<leader>cpm", M.create_module_input, { desc = "Create C++ [m]odule" })

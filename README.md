@@ -30,15 +30,15 @@ return {
 &nbsp;
 ## Usage
 
-### After installation
-Run `<leader>cph` (or your custom mapping for AhoiCpp help) on normal mode.
-You should get a welcome message on a floating buffer. If it happens, you are good to go.
+### Commands
 
-### Creating and compiling your first application
-On normal mode, run `<leader>cpa`. You should be prompted to a name input. Insert a name a press enter.
-After that, a `hello world` application should pop at your development environment.
-Run `<leader>cpc` to compile it. If everything worked fine, you will get a confirmation message. Otherwise, the error logging of the app will be opened in a new tab on Neovim.
+| Command       | Description                                                     |
+| ------------- | --------------------------------------------------------------- |
+| `<leader>cph` | Opens the about/help menu from AhoiCpp                          |
+| `<leader>cpa` | Creates C++ application with respective CMake files and scripts |
+| `<leader>cpm` | Creates C++ class within Modules directory and add CMake files  |
+| `<leader>cpc` | Compiles the current C++ project                                |
 
-### Adding class modules
-On normal mode again, run `<leader>cpm`. You will be prompted to input you module name. This will create a `Modules` directory on your project root directory with the respective module class and the needed CMakeLists.txt files. Here you may have to do some manual work to include the files on your project.
-`Note`: after doing this, go to the CMakeLists.txt file on your project root directory and uncomment `add_subdirectory(Modules)`.
+### License
+
+AhoiCpp is licensed under MIT License
