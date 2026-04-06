@@ -41,3 +41,4 @@ Run `<leader>cpc` to compile it. If everything worked fine, you will get a confi
 
 ### Adding class modules
 On normal mode again, run `<leader>cpm`. You will be prompted to input you module name. This will create a `Modules` directory on your project root directory with the respective module class and the needed CMakeLists.txt files. Here you may have to do some manual work to include the files on your project.
+`Note`: after doing this, go to the CMakeLists.txt file on your project root directory and uncomment `add_subdirectory(Modules)`.
