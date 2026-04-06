@@ -34,6 +34,12 @@ function M.setup_ahoicpp()
 	vim.keymap.set("n", "<leader>cph", M.create_about_ahoicpp, { desc = "Open Ahoicpp [h]elp" })
 	vim.keymap.set("n", "<leader>cpm", M.create_module_input, { desc = "Create C++ [m]odule" })
 	vim.keymap.set("n", "<leader>cpc", M.compile_app, { desc = "[c]ompile C++ app" })
+	vim.keymap.set(
+		"n",
+		"<leader>cpd",
+		M.create_module_directory_input,
+		{ desc = "Create custom module with [d]irectory" }
+	)
 end
 
 function M.create_module_input()
@@ -47,7 +53,7 @@ function M.create_module_input()
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
 		if input and utils.is_valid_class_name(input) then
-			M.create_module(input)
+			M.create_module(input, "Modules")
 		else
 			vim.notify("Invalid class name provided.\n")
 		end
@@ -66,6 +72,76 @@ function M.create_module_input()
 			end
 		end,
 	})
+end
+
+function M.create_module_directory_input()
+	local directory_name = ""
+	local module_name = ""
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = 40
+	local height = 1
+	local ui = vim.api.nvim_list_uis()[1]
+	local row = math.floor((ui.height - height) / 2)
+	local col = math.floor((ui.width - width) / 2)
+
+	local win = vim.api.nvim_open_win(buf, true, {
+		relative = "editor",
+		width = width,
+		height = height,
+		row = row,
+		col = col,
+		style = "minimal",
+		border = "rounded",
+		title = "Ahoi C++ Add Directory and Module",
+		title_pos = "center",
+	})
+
+	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
+	vim.fn.prompt_setprompt(buf, "Directory Name: ")
+	vim.cmd("startinsert")
+
+	vim.fn.prompt_setcallback(buf, function(input)
+		vim.api.nvim_win_close(win, true)
+		directory_name = input
+		if directory_name and utils.is_valid_class_name(directory_name) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+
+			local buf2 = vim.api.nvim_create_buf(false, true)
+
+			local win2 = vim.api.nvim_open_win(buf2, true, {
+				relative = "editor",
+				width = width,
+				height = height,
+				row = row,
+				col = col,
+				style = "minimal",
+				border = "rounded",
+				title = "Ahoi C++ Add Directory and Module",
+				title_pos = "center",
+			})
+
+			vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf2 })
+			vim.fn.prompt_setprompt(buf2, "Module Name: ")
+
+			vim.defer_fn(function()
+				vim.cmd("startinsert")
+			end, 10)
+
+			vim.fn.prompt_setcallback(buf2, function(input2)
+				vim.api.nvim_win_close(win2, true)
+				module_name = input2
+				if module_name and utils.is_valid_class_name(module_name) then
+					M.create_module(module_name, directory_name)
+				else
+					vim.notify("Invalid module name provided.\n")
+				end
+				vim.api.nvim_buf_delete(buf2, { force = true })
+			end)
+		else
+			vim.notify("Invalid directory name provided.\n")
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+	end)
 end
 
 function M.create_class_input()
@@ -232,12 +308,12 @@ function M.create_main(main_name)
 	utils.write_file(build_path, build_template)
 end
 
-function M.create_module(module_name)
-	local modules_path = "./Modules/" .. module_name .. "/include/" .. module_name
+function M.create_module(module_name, parent_directory_name)
+	local modules_path = "./" .. parent_directory_name .. "/" .. module_name .. "/include/" .. module_name
 	utils.create_dir(modules_path)
-	modules_path = "./Modules/" .. module_name .. "/src"
+	modules_path = "./" .. parent_directory_name .. "/" .. module_name .. "/src"
 	utils.create_dir(modules_path)
-	local cmake_path = "./Modules/CMakeLists.txt"
+	local cmake_path = "./" .. parent_directory_name .. "/CMakeLists.txt"
 	local mode = utils.file_exists(cmake_path) and "a" or "w"
 	local file, err = io.open(cmake_path, mode)
 	if not file then
@@ -245,16 +321,24 @@ function M.create_module(module_name)
 	end
 	file:write("add_subdirectory(" .. module_name .. ")\n")
 	file:close()
-	cmake_path = "./Modules/" .. module_name .. "/CMakeLists.txt"
+	cmake_path = "./" .. parent_directory_name .. "/" .. module_name .. "/CMakeLists.txt"
 	local cmake_template = utils.get_module_cmake_template()
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
 	utils.write_file(cmake_path, cmake_template)
-	local header_path = "./Modules/" .. module_name .. "/include/" .. module_name .. "/" .. module_name .. ".h"
+	local header_path = "./"
+		.. parent_directory_name
+		.. "/"
+		.. module_name
+		.. "/include/"
+		.. module_name
+		.. "/"
+		.. module_name
+		.. ".h"
 	local header_template = utils.get_header_template()
 	header_template = header_template:gsub("{{CLASS_NAME}}", module_name)
 	utils.write_file(header_path, header_template)
 	vim.cmd("edit" .. header_path)
-	local cpp_path = "./Modules/" .. module_name .. "/src/" .. module_name .. ".cpp"
+	local cpp_path = "./" .. parent_directory_name .. "/" .. module_name .. "/src/" .. module_name .. ".cpp"
 	local cpp_template = utils.get_cpp_template()
 	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", module_name)
 	utils.write_file(cpp_path, cpp_template)

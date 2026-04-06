@@ -32,12 +32,13 @@ return {
 
 ### Commands
 
-| Command       | Description                                                     |
-| ------------- | --------------------------------------------------------------- |
-| `<leader>cph` | Opens the about/help menu from AhoiCpp                          |
-| `<leader>cpa` | Creates C++ application with respective CMake files and scripts |
-| `<leader>cpm` | Creates C++ class within Modules directory and add CMake files  |
-| `<leader>cpc` | Compiles the current C++ project                                |
+| Command       | Description                                                         |
+| ------------- | ------------------------------------------------------------------- |
+| `<leader>cph` | Opens the about/help menu from AhoiCpp                              |
+| `<leader>cpa` | Creates C++ application with respective CMake files and scripts     |
+| `<leader>cpm` | Creates C++ class within Modules directory and add CMake files      |
+| `<leader>cpd` | Creates C++ class within custom named directory and add CMake files |
+| `<leader>cpc` | Compiles the current C++ project                                    |
 
 ### License
 
