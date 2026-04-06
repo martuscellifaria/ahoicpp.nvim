@@ -177,6 +177,7 @@ function M.compile_app()
 		vim.fn.jobstart({ "python", "build.py", "abcde" }, {
 			on_exit = function(_, code)
 				if code == 0 then
+					vim.cmd("LspRestart")
 					vim.notify("C++ app compilation finished.")
 				else
 					vim.notify("Failed to compile. Please read build.log")
