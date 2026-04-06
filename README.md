@@ -21,12 +21,7 @@ return {
     'martuscellifaria/ahoicpp.nvim',
     config = function()
       local opts = { noremap = true, silent = true }
-      local ahoicpp = require 'ahoicpp'
-      vim.keymap.set('n', '<leader>cpp', ahoicpp.create_class_input, { desc = 'Create C++ [c]lass' })
-      vim.keymap.set('n', '<leader>cpa', ahoicpp.create_main_input, { desc = 'Create C++ [a]pp' })
-      vim.keymap.set('n', '<leader>cph', ahoicpp.create_about_ahoicpp, { desc = 'Open AhoiCpp [h]elp' })
-      vim.keymap.set('n', '<leader>cpm', ahoicpp.create_module_input, { desc = 'Create C++ [m]odule' })
-      vim.keymap.set('n', '<leader>cpc', ahoicpp.compile_app, { desc = '[c]ompile C++ app' })
+      require 'ahoicpp'
     end,
   },
 }
@@ -35,6 +30,14 @@ return {
 &nbsp;
 ## Usage
 
-After installation:
-Run `<leader>cph` (or your custom mapping for AhoiCpp help) in normal mode.
-You should get a message on a floating buffer. If it happens, you are good to go.
+### After installation
+Run `<leader>cph` (or your custom mapping for AhoiCpp help) on normal mode.
+You should get a welcome message on a floating buffer. If it happens, you are good to go.
+
+### Creating and compiling your first application
+On normal mode, run `<leader>cpa`. You should be prompted to a name input. Insert a name a press enter.
+After that, a `hello world` application should pop at your development environment.
+Run `<leader>cpc` to compile it. If everything worked fine, you will get a confirmation message. Otherwise, the error logging of the app will be opened in a new tab on Neovim.
+
+### Adding class modules
+On normal mode again, run `<leader>cpm`. You will be prompted to input you module name. This will create a `Modules` directory on your project root directory with the respective module class and the needed CMakeLists.txt files. Here you may have to do some manual work to include the files on your project.

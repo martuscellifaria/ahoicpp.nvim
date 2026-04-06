@@ -317,7 +317,56 @@ local function create_dialog(dialog_title, dialog_width, dialog_height, buf)
 	return win
 end
 
--- Globals/everything that should be accessible through the API.
+local function is_valid_class_name(class_name)
+	if #class_name == 0 then
+		return false
+	end
+	local keywords = {
+		"class",
+		"struct",
+		"union",
+		"enum",
+		"virtual",
+		"public",
+		"private",
+		"protected",
+		"const",
+		"static",
+		"volatile",
+		"mutable",
+		"explicit",
+		"friend",
+		"operator",
+		"template",
+		"typename",
+		"namespace",
+		"using",
+		"new",
+		"delete",
+		"this",
+		"inline",
+		"override",
+		"final",
+	}
+	for _, kw in ipairs(keywords) do
+		if class_name == kw then
+			return false
+		end
+	end
+	local first = class_name:sub(1, 1)
+	if not first:match("[%a]") then
+		return false
+	end
+	for i = 1, #class_name do
+		if not class_name:sub(i, i):match("[%a%d_]") then
+			return false
+		end
+	end
+	if class_name:find("__") then
+		return false
+	end
+	return true
+end
 
 local M = {}
 
@@ -339,10 +388,10 @@ function M.create_module_input()
 
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
-		if input and input ~= "" then
+		if input and is_valid_class_name(input) then
 			M.create_module(input)
 		else
-			vim.notify("No input provided.\n")
+			vim.notify("Invalid class name provided.\n")
 		end
 
 		vim.schedule(function()
@@ -371,10 +420,10 @@ function M.create_class_input()
 
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
-		if input and input ~= "" then
+		if input and is_valid_class_name(input) then
 			M.create_class(input, ".")
 		else
-			vim.notify("No input provided.\n")
+			vim.notify("Invalid class name provided.\n")
 		end
 
 		vim.schedule(function()
@@ -403,10 +452,10 @@ function M.create_main_input()
 
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
-		if input and input ~= "" then
+		if input and is_valid_class_name(input) ~= "" then
 			M.create_main(input)
 		else
-			vim.notify("No input provided.\n")
+			vim.notify("Invalid C++ file/class name provided.\n")
 		end
 
 		vim.schedule(function()
