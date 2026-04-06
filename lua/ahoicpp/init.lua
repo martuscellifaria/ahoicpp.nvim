@@ -452,7 +452,7 @@ function M.create_main_input()
 
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
-		if input and is_valid_class_name(input) ~= "" then
+		if input and is_valid_class_name(input) then
 			M.create_main(input)
 		else
 			vim.notify("Invalid C++ file/class name provided.\n")
