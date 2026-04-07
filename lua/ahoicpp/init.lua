@@ -247,9 +247,18 @@ function M.create_about_ahoicpp()
 end
 
 function M.compile_app()
+	local python = ""
+	if vim.fn.executable("python") == 1 then
+		python = "python"
+	elseif vim.fn.executable("python3") == 1 then
+		python = "python3"
+	else
+		vim.notify("Python not found. Stopping.")
+		return
+	end
 	if utils.file_exists("build.py") then
 		vim.notify("Starting compilation.")
-		vim.fn.jobstart({ "python", "build.py", "abcde" }, {
+		vim.fn.jobstart({ python, "build.py", "abcde" }, {
 			on_exit = function(_, code)
 				if code == 0 then
 					vim.cmd("LspRestart")
