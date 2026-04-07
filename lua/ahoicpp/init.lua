@@ -318,6 +318,10 @@ function M.create_main(main_name)
 end
 
 function M.create_module(module_name, parent_directory_name)
+	local add_to_cmake = false
+	if not utils.dir_exists("./" .. module_name) then
+		add_to_cmake = true
+	end
 	local modules_path = "./" .. parent_directory_name .. "/" .. module_name .. "/include/" .. module_name
 	utils.create_dir(modules_path)
 	modules_path = "./" .. parent_directory_name .. "/" .. module_name .. "/src"
@@ -351,6 +355,35 @@ function M.create_module(module_name, parent_directory_name)
 	local cpp_template = utils.get_cpp_template()
 	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", module_name)
 	utils.write_file(cpp_path, cpp_template)
+	if utils.file_exists("./CMakeLists.txt") and add_to_cmake then
+		local parent_cmake_file = io.open("./CMakeLists.txt", "r")
+		if parent_cmake_file then
+			local parent_cmake_text = parent_cmake_file:read("*a")
+			if parent_cmake_text then
+				parent_cmake_file:close()
+				parent_cmake_text = parent_cmake_text:gsub(
+					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
+					"add_subdirectory(" .. parent_directory_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
+				)
+				utils.update_file("./CMakeLists.txt", parent_cmake_text)
+			end
+		end
+	end
+	if utils.file_exists("./App/CMakeLists.txt") and add_to_cmake then
+		local parent_cmake_file = io.open("./App/CMakeLists.txt", "r")
+		if parent_cmake_file then
+			local parent_cmake_text = parent_cmake_file:read("*a")
+			if parent_cmake_text then
+				parent_cmake_file:close()
+				parent_cmake_text = parent_cmake_text:gsub(
+					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
+					"target_link_libraries(${PROJECT_NAME} " .. module_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
+				)
+				utils.update_file("./App/CMakeLists.txt", parent_cmake_text)
+			end
+		end
+	end
+
 	vim.cmd("edit" .. cpp_path)
 end
 

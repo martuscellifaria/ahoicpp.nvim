@@ -83,7 +83,7 @@ string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 string(TIMESTAMP BUILD_DATE "%Y%m%d")
 
 add_subdirectory(App)
-# add_subdirectory(Modules) # Placeholder for adding Modules directory
+#PLACEHOLDER_MODULE_IF_NOT_EXISTS#
 ]]
 end
 
@@ -100,7 +100,7 @@ add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_23)
-# target_link_libraries({{PROJECT_NAME}} PlaceholderForSomeLibrary)
+#PLACEHOLDER_MODULE_IF_NOT_EXISTS#
 
 if(WIN32)
     configure_file(
@@ -284,6 +284,18 @@ local function write_file(path, content)
 	return false
 end
 
+local function update_file(path, content)
+	if file_exists(path) then
+		local file = io.open(path, "w")
+		if file then
+			file:write(content)
+			file:close()
+			return true
+		end
+	end
+	return false
+end
+
 local function dir_exists(path)
 	local exists = vim.uv.fs_stat(path) and vim.uv.fs_stat(path).type == "directory"
 	return exists
@@ -360,6 +372,7 @@ return {
 	get_version_rc_in = get_version_rc_in,
 	file_exists = file_exists,
 	write_file = write_file,
+	update_file = update_file,
 	dir_exists = dir_exists,
 	create_dir = create_dir,
 	is_valid_class_name = is_valid_class_name,
