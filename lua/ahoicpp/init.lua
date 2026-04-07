@@ -1,10 +1,11 @@
-utils = require("ahoicpp.utils")
 -- AhoiCpp
 -- Developed by Alexandre Martuscelli Faria
 -- Copyright 2026
 -- License MIT
 
 -- Main file
+
+utils = require("ahoicpp.utils")
 
 local function create_dialog(dialog_title, dialog_width, dialog_height, buf)
 	local width = dialog_width
@@ -319,7 +320,7 @@ end
 
 function M.create_module(module_name, parent_directory_name)
 	local add_to_cmake = false
-	if not utils.dir_exists("./" .. module_name) then
+	if not utils.dir_exists("./" .. parent_directory_name) then
 		add_to_cmake = true
 	end
 	local modules_path = "./" .. parent_directory_name .. "/" .. module_name .. "/include/" .. module_name
