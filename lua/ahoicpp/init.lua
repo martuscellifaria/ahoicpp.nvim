@@ -5,14 +5,14 @@
 
 -- Main file
 
-utils = require("ahoicpp.utils")
+local utils = require("ahoicpp.utils")
 
-local function create_dialog(dialog_title, dialog_width, dialog_height, buf)
+local function create_dialog(dialog_title, dialog_width, dialog_height, buf, row, col)
 	local width = dialog_width
 	local height = dialog_height
 	local ui = vim.api.nvim_list_uis()[1]
-	local row = math.floor((ui.height - height) / 2)
-	local col = math.floor((ui.width - width) / 2)
+	row = row or math.floor((ui.height - height) / 2)
+	col = col or math.floor((ui.width - width) / 2)
 
 	local win = vim.api.nvim_open_win(buf, true, {
 		relative = "editor",
@@ -30,6 +30,8 @@ end
 
 local M = {}
 
+M.autocompile_on_create = true
+
 function M.setup_ahoicpp()
 	vim.keymap.set("n", "<leader>cpa", M.create_main_input, { desc = "Create C++ [a]pp" })
 	vim.keymap.set("n", "<leader>cph", M.create_about_ahoicpp, { desc = "Open Ahoicpp [h]elp" })
@@ -41,11 +43,31 @@ function M.setup_ahoicpp()
 		M.create_module_directory_input,
 		{ desc = "Create custom module with [d]irectory" }
 	)
+	vim.keymap.set("n", "<leader>cpe", M.clone_external_from_git, { desc = "Clone [e]xternal dependency from Git" })
+	vim.keymap.set(
+		"n",
+		"<leader>cpt",
+		M.toggle_autocompile,
+		{ desc = "[t]oggle autocompile app by module/app creation (Default is active)" }
+	)
+end
+
+function M.toggle_autocompile()
+	M.autocompile_on_create = not M.autocompile_on_create
+	if M.autocompile_on_create then
+		vim.notify("Autocompile on create activated", vim.log.levels.INFO)
+	else
+		vim.notify("Autocompile on create deactivated", vim.log.levels.INFO)
+	end
 end
 
 function M.create_module_input()
+	if not utils.file_exists("./.ahoicpp") then
+		vim.notify("AhoiCpp is not initialized. Please create an app first.\n", vim.log.levels.WARN)
+		return
+	end
 	local buf = vim.api.nvim_create_buf(false, true)
-	local win = create_dialog("Ahoi C++ Add Module", 40, 1, buf)
+	local win = create_dialog("AhoiCpp Add Module", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "Module Name: ")
@@ -56,7 +78,7 @@ function M.create_module_input()
 		if input and utils.is_valid_class_name(input) then
 			M.create_module(input, "Modules")
 		else
-			vim.notify("Invalid class name provided.\n")
+			vim.notify("Invalid class name provided.\n", vim.log.levels.WARN)
 		end
 
 		vim.schedule(function()
@@ -76,78 +98,178 @@ function M.create_module_input()
 end
 
 function M.create_module_directory_input()
+	if not utils.file_exists("./.ahoicpp") then
+		vim.notify("AhoiCpp is not initialized. Please create an app first.\n", vim.log.levels.WARN)
+		return
+	end
+
 	local directory_name = ""
 	local module_name = ""
+	local dirs = utils.get_directories()
+	local selected_index = 1
+
 	local buf = vim.api.nvim_create_buf(false, true)
 	local width = 40
-	local height = 1
+	local completion_height = math.min(10, #dirs + 3)
+	if #dirs == 0 then
+		completion_height = 1
+	end
+
+	local prompt_height = 1
+	local height = completion_height + prompt_height
 	local ui = vim.api.nvim_list_uis()[1]
 	local row = math.floor((ui.height - height) / 2)
-	local col = math.floor((ui.width - width) / 2)
 
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative = "editor",
-		width = width,
-		height = height,
-		row = row,
-		col = col,
-		style = "minimal",
-		border = "rounded",
-		title = "Ahoi C++ Add Directory and Module",
-		title_pos = "center",
-	})
+	local completion_buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(completion_buf, 0, -1, false, dirs)
+	vim.api.nvim_set_option_value("modifiable", true, { buf = completion_buf })
 
+	local completion_win =
+		create_dialog("AhoiCpp Available Module Directories", width, completion_height, completion_buf)
+
+	local win = create_dialog("AhoiCpp Add Directory and Module", width, prompt_height, buf, row + completion_height)
+
+	vim.api.nvim_set_option_value("cursorline", true, { win = completion_win })
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "Directory Name: ")
-	vim.cmd("startinsert")
 
-	vim.fn.prompt_setcallback(buf, function(input)
-		vim.api.nvim_win_close(win, true)
-		directory_name = input
-		if directory_name and utils.is_valid_class_name(directory_name) then
-			vim.api.nvim_buf_delete(buf, { force = true })
-
-			local buf2 = vim.api.nvim_create_buf(false, true)
-
-			local win2 = vim.api.nvim_open_win(buf2, true, {
-				relative = "editor",
-				width = width,
-				height = height,
-				row = row,
-				col = col,
-				style = "minimal",
-				border = "rounded",
-				title = "Ahoi C++ Add Directory and Module",
-				title_pos = "center",
-			})
-
-			vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf2 })
-			vim.fn.prompt_setprompt(buf2, "Module Name: ")
-
-			vim.defer_fn(function()
-				vim.cmd("startinsert")
-			end, 10)
-
-			vim.fn.prompt_setcallback(buf2, function(input2)
-				vim.api.nvim_win_close(win2, true)
-				module_name = input2
-				if module_name and utils.is_valid_class_name(module_name) then
-					M.create_module(module_name, directory_name)
-				else
-					vim.notify("Invalid module name provided.\n")
-				end
-				vim.api.nvim_buf_delete(buf2, { force = true })
-			end)
-		else
-			vim.notify("Invalid directory name provided.\n")
-			vim.api.nvim_buf_delete(buf, { force = true })
+	local function update_completion_selection(text)
+		local filtered = {}
+		for _, dir in ipairs(dirs) do
+			if dir:lower():match("^" .. text:lower()) then
+				table.insert(filtered, dir)
+			end
 		end
-	end)
+		vim.api.nvim_buf_set_lines(completion_buf, 0, -1, false, filtered)
+
+		if #filtered > 0 then
+			if selected_index > #filtered then
+				selected_index = #filtered
+			end
+			if selected_index < 1 then
+				selected_index = 1
+			end
+			pcall(vim.api.nvim_win_set_cursor, completion_win, { selected_index, 0 })
+		end
+	end
+
+	vim.keymap.set("i", "<Tab>", function()
+		local filtered_dirs = vim.api.nvim_buf_get_lines(completion_buf, 0, -1, false)
+		if #filtered_dirs > 0 and selected_index <= #filtered_dirs then
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+			vim.fn.prompt_setprompt(buf, "Directory Name: ")
+			vim.api.nvim_feedkeys(filtered_dirs[selected_index], "n", false)
+			vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<End>", true, false, true), "n", false)
+		end
+	end, { buffer = buf })
+
+	vim.keymap.set("i", "<Up>", function()
+		selected_index = math.max(1, selected_index - 1)
+		pcall(vim.api.nvim_win_set_cursor, completion_win, { selected_index, 0 })
+	end, { buffer = buf })
+
+	vim.keymap.set("i", "<Down>", function()
+		local filtered_dirs = vim.api.nvim_buf_get_lines(completion_buf, 0, -1, false)
+		selected_index = math.min(#filtered_dirs, selected_index + 1)
+		pcall(vim.api.nvim_win_set_cursor, completion_win, { selected_index, 0 })
+	end, { buffer = buf })
+
+	vim.api.nvim_create_autocmd("TextChangedI", {
+		buffer = buf,
+		callback = function()
+			local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+			if lines[1] then
+				local prompt_text = lines[1]:gsub("^Directory Name: ", "")
+				update_completion_selection(prompt_text)
+			end
+		end,
+	})
+
+	local function create_directory_and_proceed_to_module(input)
+		if input ~= "" then
+			vim.cmd("stopinsert")
+			pcall(vim.api.nvim_win_close, completion_win, true)
+			pcall(vim.api.nvim_win_delete, completion_buf, { force = true })
+			vim.api.nvim_win_close(win, true)
+			directory_name = input
+			if
+				directory_name
+				and utils.is_valid_class_name(directory_name)
+				and directory_name ~= "App"
+				and directory_name ~= "build"
+				and directory_name ~= "externals"
+				and not directory_name:match("^%.")
+			then
+				local buf2 = vim.api.nvim_create_buf(false, true)
+				local win2 = create_dialog("AhoiCpp Add Directory and Module", width, 1, buf2)
+
+				vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf2 })
+				vim.fn.prompt_setprompt(buf2, "Module Name: ")
+
+				vim.defer_fn(function()
+					vim.cmd("startinsert")
+				end, 10)
+				vim.fn.prompt_setcallback(buf2, function(input2)
+					vim.api.nvim_win_close(win2, true)
+					module_name = input2
+					if module_name and utils.is_valid_class_name(module_name) then
+						M.create_module(module_name, directory_name)
+					else
+						vim.notify("Invalid module name provided.\n", vim.log.levels.ERROR)
+					end
+					vim.api.nvim_buf_delete(buf2, { force = true })
+				end)
+			else
+				vim.notify("Invalid directory name provided.\n", vim.log.levels.ERROR)
+			end
+		end
+	end
+
+	vim.keymap.set("i", "<CR>", function()
+		local cursor = vim.api.nvim_win_get_cursor(win)
+		local line = vim.api.nvim_buf_get_lines(buf, cursor[1] - 1, cursor[1], false)[1]
+		local input = line:gsub("^Directory Name: ", "")
+
+		if input == "" then
+			cursor = vim.api.nvim_win_get_cursor(completion_win)
+			line = vim.api.nvim_buf_get_lines(completion_buf, cursor[1] - 1, cursor[1], false)[1]
+			if line then
+				vim.api.nvim_set_current_win(win)
+				vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+				vim.fn.prompt_setprompt(buf, "Directory Name: ")
+				vim.api.nvim_feedkeys(line, "n", false)
+				vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<End>", true, false, true), "n", false)
+				input = line
+			end
+		end
+		create_directory_and_proceed_to_module(input)
+	end, { buffer = buf })
+	local counter = 0
+	local group = vim.api.nvim_create_augroup("InputBuffersGroup", { clear = true })
+	local related_buffers = { buf, completion_buf }
+	local function close_all_related()
+		for _, b in ipairs(related_buffers) do
+			if vim.api.nvim_buf_is_valid(b) then
+				counter = counter + 1
+				pcall(vim.api.nvim_buf_delete, b, { force = true })
+			end
+		end
+	end
+	for _, bufnr in ipairs(related_buffers) do
+		vim.api.nvim_create_autocmd("BufLeave", {
+			group = group,
+			buffer = bufnr,
+			callback = close_all_related,
+			once = true,
+		})
+	end
+
+	vim.cmd("startinsert")
 end
 
 function M.create_class_input()
 	local buf = vim.api.nvim_create_buf(false, true)
-	local win = create_dialog("Ahoi C++ Add Class", 40, 1, buf)
+	local win = create_dialog("AhoiCpp Add Class", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, "Class Name: ")
@@ -158,7 +280,7 @@ function M.create_class_input()
 		if input and utils.is_valid_class_name(input) then
 			M.create_class(input, ".")
 		else
-			vim.notify("Invalid class name provided.\n")
+			vim.notify("Invalid class name provided.\n", vim.log.levels.WARN)
 		end
 
 		vim.schedule(function()
@@ -178,19 +300,95 @@ function M.create_class_input()
 end
 
 function M.create_main_input()
+	local function proceed_with_main_creation()
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = create_dialog("AhoiCpp Add Main", 40, 1, buf)
+
+		vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
+		vim.fn.prompt_setprompt(buf, "App Name: ")
+		vim.cmd("startinsert")
+
+		vim.fn.prompt_setcallback(buf, function(input)
+			vim.api.nvim_win_close(win, true)
+			if input and utils.is_valid_class_name(input) then
+				M.create_main(input)
+			else
+				vim.notify("Invalid C++ file/class name provided.\n", vim.log.levels.WARN)
+			end
+
+			vim.schedule(function()
+				if vim.api.nvim_buf_is_valid(buf) then
+					vim.api.nvim_buf_delete(buf, { force = true })
+				end
+			end)
+		end)
+
+		vim.api.nvim_create_autocmd("BufLeave", {
+			buffer = buf,
+			callback = function()
+				if vim.api.nvim_buf_is_valid(buf) then
+					vim.api.nvim_buf_delete(buf, { force = true })
+				end
+			end,
+		})
+	end
+
+	if utils.file_exists("./.ahoicpp") then
+		if utils.dir_exists("./App") then
+			vim.notify(
+				"You appear to have a main app already. Please check your project structure.\n",
+				vim.log.levels.WARN
+			)
+			return
+		end
+		proceed_with_main_creation()
+	else
+		local directories = utils.get_directories()
+		if #directories > 0 then
+			M.create_yes_no_dialog({
+				"",
+				"This directory contains a few subdirectories, and appear not to be an AhoiCpp project.",
+				"Are you sure you want to start a project here?",
+				"",
+			}, function(confirmed)
+				if confirmed then
+					proceed_with_main_creation()
+				elseif confirmed == false then
+					return
+				else
+					return
+				end
+			end)
+		else
+			proceed_with_main_creation()
+		end
+	end
+end
+
+function M.clone_external_from_git()
+	if not utils.file_exists("./.ahoicpp") then
+		vim.notify("AhoiCpp is not initialized. Please create an app first.\n", vim.log.levels.WARN)
+		return
+	end
 	local buf = vim.api.nvim_create_buf(false, true)
-	local win = create_dialog("Ahoi C++ Add Main", 40, 1, buf)
+	local win = create_dialog("AhoiCpp Clone External from Git", 40, 1, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
-	vim.fn.prompt_setprompt(buf, "App Name: ")
+	vim.fn.prompt_setprompt(buf, "git clone ")
 	vim.cmd("startinsert")
 
+	local function get_repo_name(url)
+		local name = url:gsub("%.git$", "")
+		name = name:match("([^/]+)$")
+		return name
+	end
 	vim.fn.prompt_setcallback(buf, function(input)
 		vim.api.nvim_win_close(win, true)
-		if input and utils.is_valid_class_name(input) then
-			M.create_main(input)
+		if input then
+			local repo_name = get_repo_name(input)
+			vim.fn.system("git clone " .. input .. " externals/" .. repo_name)
 		else
-			vim.notify("Invalid C++ file/class name provided.\n")
+			vim.notify("Invalid input provided.\nInput: " .. input .. "\n", vim.log.levels.WARN)
 		end
 
 		vim.schedule(function()
@@ -213,13 +411,13 @@ end
 function M.create_about_ahoicpp()
 	local lines = {
 		"",
-		"Ahoi C++ is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)",
-		"tool for setting a C++ 23 environment in NeoVim.",
+		"AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)",
+		"tool for setting a C++ 23 environment in Neovim.",
 		"",
 		"C++ is a terrible language, but it pays my bills since 2016.",
 		"This is my take on making it not so disfunctional.",
 		"",
-		"Ahoi C++ can set up classes, cmake files, app entrypoints and",
+		"AhoiCpp can set up classes, cmake files, app entrypoints and",
 		"even creates a python script for building your project.",
 		"",
 		"",
@@ -242,9 +440,60 @@ function M.create_about_ahoicpp()
 	end
 	local height = #lines
 
-	create_dialog("Ahoi C++ Add Main", width, height, buf)
+	create_dialog("About AhoiCpp", width, height, buf)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.api.nvim_set_current_buf(buf)
+end
+
+function M.create_yes_no_dialog(message, callback)
+	vim.api.nvim_create_autocmd("BufEnter", {
+		pattern = "HelpBuffer",
+		callback = function()
+			vim.keymap.set("n", "<CR>", ":bd!<CR>", { buffer = true, silent = true })
+		end,
+	})
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = 0
+	for _, s in ipairs(message) do
+		width = math.max(width, #s)
+	end
+	local height = #message + 2
+	local choice = true
+	local win = create_dialog("AhoiCpp Yes/No", width, height, buf)
+
+	local function render()
+		local lines = {}
+		for _, line in ipairs(message) do
+			table.insert(lines, line)
+		end
+		table.insert(lines, "")
+		table.insert(lines, string.format(" %s Yes %s No", choice and ">" or " ", choice and " " or ">"))
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	end
+
+	render()
+
+	local function close(result)
+		pcall(vim.api.nvim_win_close, win, true)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+		if callback then
+			callback(result)
+		end
+	end
+	for _, key in ipairs({ "h", "<Left>", "l", "<Right>" }) do
+		vim.keymap.set("n", key, function()
+			choice = (key == "h" or key == "<Left>")
+			render()
+		end, { buffer = buf })
+	end
+	vim.keymap.set("n", "<CR>", function()
+		close(choice)
+	end, { buffer = buf })
+	vim.keymap.set("n", "<Esc>", function()
+		close(nil)
+	end, { buffer = buf })
+	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 end
 
 function M.compile_app()
@@ -254,7 +503,7 @@ function M.compile_app()
 	elseif vim.fn.executable("python3") == 1 then
 		python = "python3"
 	else
-		vim.notify("Python not found. Stopping.")
+		vim.notify("Python not found. Stopping.\n", vim.log.levels.WARN)
 		return
 	end
 	if utils.file_exists("build.py") then
@@ -263,15 +512,15 @@ function M.compile_app()
 			on_exit = function(_, code)
 				if code == 0 then
 					vim.cmd("LspRestart")
-					vim.notify("C++ app compilation finished.")
+					vim.notify("C++ app compilation finished.", vim.log.levels.INFO)
 				else
-					vim.notify("Failed to compile. Please read build.log")
+					vim.notify("Failed to compile. Please read build.log", vim.log.levels.ERROR)
 					vim.cmd("edit" .. "./build/build.log")
 				end
 			end,
 		})
 	else
-		vim.notify("build.py not found.")
+		vim.notify("build.py not found. Are you sure you have created your app?\n", vim.log.levels.WARN)
 	end
 end
 
@@ -291,6 +540,7 @@ end
 function M.create_main(main_name)
 	local app_path = "./App/src"
 	utils.create_dir(app_path)
+	utils.create_dir("./externals")
 	local main_path = app_path .. "/" .. main_name .. ".cpp"
 	local main_template = utils.get_main_template()
 	utils.write_file(main_path, main_template)
@@ -305,6 +555,9 @@ function M.create_main(main_name)
 	version_path = app_path .. "/version.rc.in"
 	version_template = utils.get_version_rc_in()
 	utils.write_file(version_path, version_template)
+	local ahoi_path = "./.ahoicpp"
+	local ahoi_template = utils.get_ahoi_template()
+	utils.write_file(ahoi_path, ahoi_template)
 	local cmake_path = "./CMakeLists.txt"
 	local cmake_template = utils.get_parent_cmake_template()
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
@@ -316,6 +569,9 @@ function M.create_main(main_name)
 	local build_path = "./build.py"
 	local build_template = utils.get_buildscript()
 	utils.write_file(build_path, build_template)
+	if M.autocompile_on_create then
+		M.compile_app()
+	end
 end
 
 function M.create_module(module_name, parent_directory_name)
@@ -356,12 +612,22 @@ function M.create_module(module_name, parent_directory_name)
 	local cpp_template = utils.get_cpp_template()
 	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", module_name)
 	utils.write_file(cpp_path, cpp_template)
+	local warning_messages = {}
 	if utils.file_exists("./CMakeLists.txt") and add_to_cmake then
 		local parent_cmake_file = io.open("./CMakeLists.txt", "r")
 		if parent_cmake_file then
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
+				if not string.find(parent_cmake_text, "#PLACEHOLDER_MODULE_IF_NOT_EXISTS#", 1, true) then
+					table.insert(
+						warning_messages,
+						"Project CMakeLists.txt file does not contain #PLACEHOLDER_MODULE_IF_NOT_EXISTS#. You may have to add the "
+							.. parent_directory_name
+							.. " subdirectory by yourself before compiling."
+					)
+					M.autocompile_on_create = false
+				end
 				parent_cmake_text = parent_cmake_text:gsub(
 					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
 					"add_subdirectory(" .. parent_directory_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
@@ -376,6 +642,15 @@ function M.create_module(module_name, parent_directory_name)
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
+				if not string.find(parent_cmake_text, "#PLACEHOLDER_MODULE_IF_NOT_EXISTS#", 1, true) then
+					table.insert(
+						warning_messages,
+						"App CMakeLists.txt file does not contain #PLACEHOLDER_MODULE_IF_NOT_EXISTS#. You may have to add the "
+							.. module_name
+							.. " target link library by yourself before compiling."
+					)
+					M.autocompile_on_create = false
+				end
 				parent_cmake_text = parent_cmake_text:gsub(
 					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
 					"target_link_libraries(${PROJECT_NAME} " .. module_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
@@ -385,8 +660,17 @@ function M.create_module(module_name, parent_directory_name)
 		end
 	end
 
+	if #warning_messages > 0 then
+		local combined = table.concat(warning_messages, "\n")
+		vim.notify(combined .. "\n", vim.log.levels.WARN)
+	end
+
 	vim.cmd("edit" .. cpp_path)
+	if M.autocompile_on_create then
+		M.compile_app()
+	end
 end
 
 M.setup_ahoicpp()
+
 return M

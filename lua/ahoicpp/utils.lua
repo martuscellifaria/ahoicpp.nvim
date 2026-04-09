@@ -5,6 +5,10 @@
 
 -- Utils/templates
 
+local function get_ahoi_template()
+	return [[Ahoi Cap'n!]]
+end
+
 local function get_header_template()
 	return [[#pragma once
 
@@ -45,13 +49,13 @@ local function get_main_template()
 extern const char* embeddedVersion;
 
 int main() {
-	std::println("Ahoi C++ is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)");
-	std::println("tool for setting a C++ 23 environment in NeoVim.");
+	std::println("AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)");
+	std::println("tool for setting a C++ 23 environment in Neovim.");
 	std::println("");
 	std::println("C++ is a terrible language, but it pays my bills since 2016.");
 	std::println("This is my take on making it not so disfunctional.");
 	std::println("");
-	std::println("Ahoi C++ can set up classes, cmake files, app entrypoints and");
+	std::println("AhoiCpp can set up classes, cmake files, app entrypoints and");
 	std::println("even creates a python script for building your project.");
 	return 0;
 }
@@ -75,7 +79,7 @@ set(VER_PATCH ${PROJECT_VERSION_PATCH})
 set(VER_REVISION ${PROJECT_VERSION_TWEAK})
 set(VERSION ${PROJECT_VERSION})
 set(COMPANY "AHOI Labs")
-set(DESCRIPTION "AHOI Labs own your project")
+set(DESCRIPTION "Your project is owned by A.H.O.I Labs")
 set(PRODUCT ${PROJECT_NAME})
 set(COPYRIGHT "Copyright 2026")
 
@@ -301,6 +305,31 @@ local function dir_exists(path)
 	return exists
 end
 
+local function get_directories()
+	local dirs = {}
+	local cwd = vim.fn.getcwd()
+	local handle = vim.uv.fs_scandir(cwd)
+	if handle then
+		while true do
+			local name, type = vim.uv.fs_scandir_next(handle)
+			if not name then
+				break
+			end
+			if
+				type == "directory"
+				and not name:match("^%.")
+				and name ~= "App"
+				and name ~= "build"
+				and name ~= "externals"
+			then
+				table.insert(dirs, name)
+			end
+		end
+	end
+	table.sort(dirs)
+	return dirs
+end
+
 local function create_dir(path)
 	if dir_exists(path) then
 		return
@@ -360,6 +389,7 @@ local function is_valid_class_name(class_name)
 end
 
 return {
+	get_ahoi_template = get_ahoi_template,
 	get_header_template = get_header_template,
 	get_cpp_template = get_cpp_template,
 	get_main_template = get_main_template,
@@ -374,6 +404,7 @@ return {
 	write_file = write_file,
 	update_file = update_file,
 	dir_exists = dir_exists,
+	get_directories = get_directories,
 	create_dir = create_dir,
 	is_valid_class_name = is_valid_class_name,
 }
