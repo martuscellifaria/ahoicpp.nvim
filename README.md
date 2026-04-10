@@ -129,4 +129,4 @@ YourApp/
 
 ## License
 
-MIT (see [LICENSE](License) for details)
+MIT (see [LICENSE](LICENSE) for details)
