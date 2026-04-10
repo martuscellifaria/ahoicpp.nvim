@@ -25,7 +25,6 @@ Of course you have to have `Neovim` as well, version `0.11` or higher is recomme
     config = function()
       require('ahoicpp').setup()
     end,
-
 }
 ```
 
@@ -130,4 +129,4 @@ YourApp/
 
 ## License
 
-MIT (see LICENSE file for details)
+MIT (see [LICENSE](License) for details)
