@@ -41,6 +41,8 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 
 ## Usage
 
+![AhoiCpp short demo](./assets/01_create_first_app.gif)
+
 ### Default Keymaps
 
 | Command       | Description                                                                  |
@@ -82,7 +84,6 @@ You are also able to override the keymap bindings, for example:
     config = function()
       require('ahoicpp').setup({keymaps = {compile = "<leader>cc",}})
     end,
-
 }
 ```
 
