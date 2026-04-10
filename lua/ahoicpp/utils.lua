@@ -52,8 +52,8 @@ int main() {
 	std::println("AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)");
 	std::println("tool for setting a C++ 23 environment in Neovim.");
 	std::println("");
-	std::println("C++ is a terrible language, but it pays my bills since 2016.");
-	std::println("This is my take on making it not so disfunctional.");
+	std::println("C++ is a challenging language, specially for newcomers.");
+	std::println("This is my take on making it easier to hop along.");
 	std::println("");
 	std::println("AhoiCpp can set up classes, cmake files, app entrypoints and");
 	std::println("even creates a python script for building your project.");
@@ -87,7 +87,7 @@ string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 string(TIMESTAMP BUILD_DATE "%Y%m%d")
 
 add_subdirectory(App)
-#PLACEHOLDER_MODULE_IF_NOT_EXISTS#
+include(AhoiCppProject.cmake)
 ]]
 end
 
@@ -104,7 +104,7 @@ add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_23)
-#PLACEHOLDER_MODULE_IF_NOT_EXISTS#
+include(AhoiCppSubdirs.cmake)
 
 if(WIN32)
     configure_file(
@@ -127,9 +127,7 @@ end
 local function get_module_cmake_template()
 	return [[add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
 target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_23)
-target_include_directories({{MODULE_NAME}} PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}}
-)
+target_include_directories({{MODULE_NAME}} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}})
 ]]
 end
 
@@ -270,6 +268,71 @@ END
 ]]
 end
 
+local function get_externals_readme()
+	return [[# External dependencies
+
+This directory is intended for third-party libraries cloned from Git.
+
+## How to use
+
+1. Clone a dependency (use `<leader>cpe on Neovim` and paste the git url, or clone manually from externals directory).
+
+2. Integrate into your build:
+- If it uses CMake: add `add_subdirectory(externals/<library-name>)` to the CMakeLists.txt file of the module that needs the external library.
+- If it is a header-only library: add `target_include_directories(your_target PRIVATE externals/<library-name>/include)` or the path to the correspondent header.
+- Due to C++ complexity and lack of standardization, some external libraries may need extra work to be integrated. Even in modern commercial IDEs it is not supposed to work out of the box.
+
+## Example with nlohmann-json (header-only):
+- Run `<leader>cpe`.
+- Paste `https://github.com/nlohmann/json.git` to the dialog prompt.
+- Then add the following to the target modules CMakeLists.txt: `target_include_directories(<YourTargetModuleName> PUBLIC ${CMAKE_SOURCE_DIR}/externals/json/include)`.
+- If everything is fine, you can go to `<YourTargetModuleName>.cpp` and put `#include "nlohmann/json.hpp"` at the top of it.
+- Now compile it with `<leader>cpc`.
+- Note: For other libraries that need extra compilation, you may have to also paste `target_link_libraries(<YourTargetModuleName> <YourClonedExternalLibrary>)`
+]]
+end
+
+local function get_gitignore()
+	return [[build/
+compile_commands.json
+
+externals/*
+!externals/README.md
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+.DS_Store
+Thumbs.db
+
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.so
+*.dylib
+*.dll
+
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+!AhoiCppProject.cmake
+!AhoiCppSubdirs.cmake
+
+App/version.h
+App/version.c
+App/version.rc
+
+__pycache__/
+*.pyc
+]]
+end
+
 local function file_exists(name)
 	local exists = vim.uv.fs_stat(name) and vim.uv.fs_stat(name).type == "file"
 	return exists
@@ -385,6 +448,19 @@ local function is_valid_class_name(class_name)
 	if class_name:find("__") then
 		return false
 	end
+	if class_name:match("^_") or class_name:match("_$") then
+		return false
+	end
+
+	if class_name:match("^[A-Z]+$") then
+		vim.notify("All-caps class names are typically reserved for macros.", vim.log.levels.WARN)
+		return true
+	end
+
+	local pascal_case = class_name:match("^[A-Z][a-zA-Z0-9]*$")
+	if not pascal_case then
+		vim.notify("Consider using PascalCase for class names.", vim.log.levels.WARN)
+	end
 	return true
 end
 
@@ -400,6 +476,8 @@ return {
 	get_version_h_in = get_version_h_in,
 	get_app_cmake_template = get_app_cmake_template,
 	get_version_rc_in = get_version_rc_in,
+	get_externals_readme = get_externals_readme,
+	get_gitignore = get_gitignore,
 	file_exists = file_exists,
 	write_file = write_file,
 	update_file = update_file,

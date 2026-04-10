@@ -30,26 +30,52 @@ end
 
 local M = {}
 
-M.autocompile_on_create = true
+M.config = {
+	autocompile_on_create = true,
+	keymaps = {
+		group_c = "<leader>c",
+		group_cp = "<leader>cp",
+		create_app = "<leader>cpa",
+		help = "<leader>cph",
+		create_module = "<leader>cpm",
+		compile = "<leader>cpc",
+		create_module_dir = "<leader>cpd",
+		clone_external = "<leader>cpe",
+		toggle_autocompile = "<leader>cpt",
+	},
+}
 
-function M.setup_ahoicpp()
-	vim.keymap.set("n", "<leader>cpa", M.create_main_input, { desc = "Create C++ [a]pp" })
-	vim.keymap.set("n", "<leader>cph", M.create_about_ahoicpp, { desc = "Open Ahoicpp [h]elp" })
-	vim.keymap.set("n", "<leader>cpm", M.create_module_input, { desc = "Create C++ [m]odule" })
-	vim.keymap.set("n", "<leader>cpc", M.compile_app, { desc = "[c]ompile C++ app" })
-	vim.keymap.set(
-		"n",
-		"<leader>cpd",
-		M.create_module_directory_input,
-		{ desc = "Create custom module with [d]irectory" }
-	)
-	vim.keymap.set("n", "<leader>cpe", M.clone_external_from_git, { desc = "Clone [e]xternal dependency from Git" })
-	vim.keymap.set(
-		"n",
-		"<leader>cpt",
-		M.toggle_autocompile,
-		{ desc = "[t]oggle autocompile app by module/app creation (Default is active)" }
-	)
+function M.setup(user_config)
+	M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
+	M.autocompile_on_create = M.config.autocompile_on_create
+
+	if M.config.keymaps == false then
+		return
+	end
+
+	local km = M.config.keymaps
+
+	if km.group_c then
+		vim.keymap.set("n", km.group_c, "<Nop>", { desc = "+C++" })
+	end
+
+	if km.group_cp then
+		vim.keymap.set("n", km.group_cp, "<Nop>", { desc = "+AhoiCpp" })
+	end
+
+	local function map_if(key, func, desc)
+		if key and key ~= false then
+			vim.keymap.set("n", key, func, { desc = desc })
+		end
+	end
+
+	map_if(km.create_app, M.create_main_input, "Create C++ [a]pp")
+	map_if(km.help, M.create_about_ahoicpp, "Open Ahoicpp [h]elp")
+	map_if(km.create_module, M.create_module_input, "Create C++ [m]odule")
+	map_if(km.compile, M.compile_app, "[c]ompile C++ app")
+	map_if(km.create_module_dir, M.create_module_directory_input, "Create custom module with [d]irectory")
+	map_if(km.clone_external, M.clone_external_from_git, "Clone [e]xternal dependency from Git")
+	map_if(km.toggle_autocompile, M.toggle_autocompile, "[t]oggle autocompile app")
 end
 
 function M.toggle_autocompile()
@@ -244,13 +270,11 @@ function M.create_module_directory_input()
 		end
 		create_directory_and_proceed_to_module(input)
 	end, { buffer = buf })
-	local counter = 0
 	local group = vim.api.nvim_create_augroup("InputBuffersGroup", { clear = true })
 	local related_buffers = { buf, completion_buf }
 	local function close_all_related()
 		for _, b in ipairs(related_buffers) do
 			if vim.api.nvim_buf_is_valid(b) then
-				counter = counter + 1
 				pcall(vim.api.nvim_buf_delete, b, { force = true })
 			end
 		end
@@ -386,7 +410,15 @@ function M.clone_external_from_git()
 		vim.api.nvim_win_close(win, true)
 		if input then
 			local repo_name = get_repo_name(input)
-			vim.fn.system("git clone " .. input .. " externals/" .. repo_name)
+			vim.system({ "git", "clone", input, "externals/" .. repo_name }, {}, function(obj)
+				vim.schedule(function()
+					if obj.code == 0 then
+						vim.notify("Successfully cloned " .. repo_name, vim.log.levels.INFO)
+					else
+						vim.notify("Failed to clone repository", vim.log.levels.ERROR)
+					end
+				end)
+			end)
 		else
 			vim.notify("Invalid input provided.\nInput: " .. input .. "\n", vim.log.levels.WARN)
 		end
@@ -414,8 +446,8 @@ function M.create_about_ahoicpp()
 		"AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)",
 		"tool for setting a C++ 23 environment in Neovim.",
 		"",
-		"C++ is a terrible language, but it pays my bills since 2016.",
-		"This is my take on making it not so disfunctional.",
+		"C++ is a challenging language, specially for newcomers.",
+		"This is my take on making it easier to hop along.",
 		"",
 		"AhoiCpp can set up classes, cmake files, app entrypoints and",
 		"even creates a python script for building your project.",
@@ -507,18 +539,21 @@ function M.compile_app()
 		return
 	end
 	if utils.file_exists("build.py") then
-		vim.notify("Starting compilation.")
-		vim.fn.jobstart({ python, "build.py", "abcde" }, {
-			on_exit = function(_, code)
-				if code == 0 then
-					vim.cmd("LspRestart")
+		vim.notify("Starting compilation.", vim.log.levels.INFO)
+		vim.system({ python, "build.py", "abcde" }, { text = true }, function(obj)
+			vim.schedule(function()
+				if obj.code == 0 then
 					vim.notify("C++ app compilation finished.", vim.log.levels.INFO)
+					local clients = vim.lsp.get_clients({ name = "clangd" })
+					if #clients > 0 then
+						vim.cmd("LspRestart clangd")
+					end
 				else
 					vim.notify("Failed to compile. Please read build.log", vim.log.levels.ERROR)
-					vim.cmd("edit" .. "./build/build.log")
+					vim.cmd("edit ./build/build.log")
 				end
-			end,
-		})
+			end)
+		end)
 	else
 		vim.notify("build.py not found. Are you sure you have created your app?\n", vim.log.levels.WARN)
 	end
@@ -541,6 +576,7 @@ function M.create_main(main_name)
 	local app_path = "./App/src"
 	utils.create_dir(app_path)
 	utils.create_dir("./externals")
+	utils.write_file("./externals/README.md", utils.get_externals_readme())
 	local main_path = app_path .. "/" .. main_name .. ".cpp"
 	local main_template = utils.get_main_template()
 	utils.write_file(main_path, main_template)
@@ -555,13 +591,14 @@ function M.create_main(main_name)
 	version_path = app_path .. "/version.rc.in"
 	version_template = utils.get_version_rc_in()
 	utils.write_file(version_path, version_template)
-	local ahoi_path = "./.ahoicpp"
-	local ahoi_template = utils.get_ahoi_template()
-	utils.write_file(ahoi_path, ahoi_template)
+	utils.write_file("./.ahoicpp", utils.get_ahoi_template())
+	utils.write_file("./.gitignore", utils.get_gitignore())
+	utils.write_file("./AhoiCppProject.cmake", "#Created automagically by AhoiCpp. Please do not modify this file.")
 	local cmake_path = "./CMakeLists.txt"
 	local cmake_template = utils.get_parent_cmake_template()
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
 	utils.write_file(cmake_path, cmake_template)
+	utils.write_file("./App/AhoiCppSubdirs.cmake", "#Created automagically by AhoiCpp. Please do not modify this file.")
 	cmake_path = "./App/CMakeLists.txt"
 	cmake_template = utils.get_app_cmake_template()
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
@@ -612,57 +649,30 @@ function M.create_module(module_name, parent_directory_name)
 	local cpp_template = utils.get_cpp_template()
 	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", module_name)
 	utils.write_file(cpp_path, cpp_template)
-	local warning_messages = {}
-	if utils.file_exists("./CMakeLists.txt") and add_to_cmake then
-		local parent_cmake_file = io.open("./CMakeLists.txt", "r")
+	if utils.file_exists("./AhoiCppProject.cmake") and add_to_cmake then
+		local parent_cmake_file = io.open("./AhoiCppProject.cmake", "r")
 		if parent_cmake_file then
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
-				if not string.find(parent_cmake_text, "#PLACEHOLDER_MODULE_IF_NOT_EXISTS#", 1, true) then
-					table.insert(
-						warning_messages,
-						"Project CMakeLists.txt file does not contain #PLACEHOLDER_MODULE_IF_NOT_EXISTS#. You may have to add the "
-							.. parent_directory_name
-							.. " subdirectory by yourself before compiling."
-					)
-					M.autocompile_on_create = false
-				end
-				parent_cmake_text = parent_cmake_text:gsub(
-					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
-					"add_subdirectory(" .. parent_directory_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
-				)
-				utils.update_file("./CMakeLists.txt", parent_cmake_text)
+				parent_cmake_text = parent_cmake_text .. "\nadd_subdirectory(" .. parent_directory_name .. ")"
+				utils.update_file("./AhoiCppProject.cmake", parent_cmake_text)
 			end
 		end
 	end
-	if utils.file_exists("./App/CMakeLists.txt") and add_to_cmake then
-		local parent_cmake_file = io.open("./App/CMakeLists.txt", "r")
+	if utils.file_exists("./App/AhoiCppSubdirs.cmake") and add_to_cmake then
+		local parent_cmake_file = io.open("./App/AhoiCppSubdirs.cmake", "r")
 		if parent_cmake_file then
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
-				if not string.find(parent_cmake_text, "#PLACEHOLDER_MODULE_IF_NOT_EXISTS#", 1, true) then
-					table.insert(
-						warning_messages,
-						"App CMakeLists.txt file does not contain #PLACEHOLDER_MODULE_IF_NOT_EXISTS#. You may have to add the "
-							.. module_name
-							.. " target link library by yourself before compiling."
-					)
-					M.autocompile_on_create = false
-				end
-				parent_cmake_text = parent_cmake_text:gsub(
-					"#PLACEHOLDER_MODULE_IF_NOT_EXISTS#",
-					"target_link_libraries(${PROJECT_NAME} " .. module_name .. ")\n#PLACEHOLDER_MODULE_IF_NOT_EXISTS#"
-				)
-				utils.update_file("./App/CMakeLists.txt", parent_cmake_text)
+				parent_cmake_text = parent_cmake_text
+					.. "\ntarget_link_libraries(${PROJECT_NAME} "
+					.. module_name
+					.. ")"
+				utils.update_file("./App/AhoiCppSubdirs.cmake", parent_cmake_text)
 			end
 		end
-	end
-
-	if #warning_messages > 0 then
-		local combined = table.concat(warning_messages, "\n")
-		vim.notify(combined .. "\n", vim.log.levels.WARN)
 	end
 
 	vim.cmd("edit" .. cpp_path)
@@ -670,7 +680,5 @@ function M.create_module(module_name, parent_directory_name)
 		M.compile_app()
 	end
 end
-
-M.setup_ahoicpp()
 
 return M
