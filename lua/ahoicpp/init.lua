@@ -546,7 +546,11 @@ function M.compile_app()
 					vim.notify("C++ app compilation finished.", vim.log.levels.INFO)
 					local clients = vim.lsp.get_clients({ name = "clangd" })
 					if #clients > 0 then
-						vim.cmd("LspRestart clangd")
+						if vim.version().minor >= 12 then
+							vim.cmd("lsp restart clangd")
+						else
+							vim.cmd("Lsprestart clangd")
+						end
 					end
 				else
 					vim.notify("Failed to compile. Please read build.log", vim.log.levels.ERROR)
