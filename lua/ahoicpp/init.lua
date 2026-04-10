@@ -655,8 +655,10 @@ function M.create_module(module_name, parent_directory_name)
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
-				parent_cmake_text = parent_cmake_text .. "\nadd_subdirectory(" .. parent_directory_name .. ")"
-				utils.update_file("./AhoiCppProject.cmake", parent_cmake_text)
+				if not string.find(parent_cmake_text, "add_subdirectory(" .. parent_directory_name .. ")", 1, true) then
+					parent_cmake_text = parent_cmake_text .. "\nadd_subdirectory(" .. parent_directory_name .. ")"
+					utils.update_file("./AhoiCppProject.cmake", parent_cmake_text)
+				end
 			end
 		end
 	end
@@ -666,11 +668,20 @@ function M.create_module(module_name, parent_directory_name)
 			local parent_cmake_text = parent_cmake_file:read("*a")
 			if parent_cmake_text then
 				parent_cmake_file:close()
-				parent_cmake_text = parent_cmake_text
-					.. "\ntarget_link_libraries(${PROJECT_NAME} "
-					.. module_name
-					.. ")"
-				utils.update_file("./App/AhoiCppSubdirs.cmake", parent_cmake_text)
+				if
+					not string.find(
+						parent_cmake_text,
+						"target_link_libraries(${PROJECT_NAME} " .. module_name .. ")",
+						1,
+						true
+					)
+				then
+					parent_cmake_text = parent_cmake_text
+						.. "\ntarget_link_libraries(${PROJECT_NAME} "
+						.. module_name
+						.. ")"
+					utils.update_file("./App/AhoiCppSubdirs.cmake", parent_cmake_text)
+				end
 			end
 		end
 	end

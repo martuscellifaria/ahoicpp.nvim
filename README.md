@@ -41,8 +41,6 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 
 ## Usage
 
-![AhoiCpp short demo](./assets/01_create_first_app.gif)
-
 ### Default Keymaps
 
 | Command       | Description                                                                  |
@@ -107,6 +105,20 @@ YourApp/
 └── externals/         (created for Git dependencies)
     └── README.md
 ```
+
+## Demo
+
+### Creating and getting your first C++ app compiled
+
+![AhoiCpp short demo 1](./assets/01_create_first_app.gif)
+
+### Adding new classes to your project
+
+![AhoiCpp short demo 2](./assets/02_create_first_module.gif)
+
+### Adding external dependencies from git repositories
+
+![AhoiCpp short demo 3](./assets/03_clone_external_dependency.gif)
 
 ## Troubleshooting
 
