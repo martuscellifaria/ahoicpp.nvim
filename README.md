@@ -119,6 +119,10 @@ YourApp/
 
 ![AhoiCpp short demo 3](./assets/03_clone_external_dependency.gif)
 
+## Check Health
+
+For health status of AhoiCpp, you can always run `:checkhealth ahoicpp` from the Neovim command line.
+
 ## Troubleshooting
 
 | Error                        | Solution                               |
