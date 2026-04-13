@@ -25,12 +25,6 @@ M.options = vim.deepcopy(M.defaults)
 
 function M.setup(user_config)
 	M.options = vim.tbl_deep_extend("force", M.defaults, user_config or {})
-
-	if M.options.git_init ~= true then
-		vim.notify("False")
-	else
-		vim.notify("True")
-	end
 end
 
 function M.toggle_autocompile()
