@@ -46,6 +46,7 @@ function M.create_main(main_name)
 	fs.write_file("./CMakeLists.txt", cmake_template)
 
 	fs.write_file("./App/AhoiCppSubdirs.cmake", "#Created automagically by AhoiCpp. Please do not modify this file.")
+	fs.write_file("./AhoiCppExternals.cmake", templates.get_ahoi_externals_template())
 
 	cmake_template = templates.get_app_cmake_template()
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)

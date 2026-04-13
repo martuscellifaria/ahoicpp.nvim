@@ -86,7 +86,6 @@ function M.is_valid_class_name(class_name)
 	if not class_name or #class_name == 0 then
 		return false
 	end
-
 	local keywords = {
 		"class",
 		"struct",
@@ -113,6 +112,18 @@ function M.is_valid_class_name(class_name)
 		"inline",
 		"override",
 		"final",
+		"typedef",
+		"constexpr",
+		"consteval",
+		"constinit",
+		"noexcept",
+		"thread_local",
+		"export",
+		"concept",
+		"requires",
+		"pre",
+		"post",
+		"contract_assert",
 	}
 
 	for _, kw in ipairs(keywords) do

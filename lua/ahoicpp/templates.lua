@@ -26,9 +26,9 @@ function M.get_cpp_template()
 	return [[#include "{{CLASS_NAME}}.h"
 
 
-{{CLASS_NAME}}::{{CLASS_NAME}}(){}
+{{CLASS_NAME}}::{{CLASS_NAME}}() {}
 
-{{CLASS_NAME}}::~{{CLASS_NAME}}(){}
+{{CLASS_NAME}}::~{{CLASS_NAME}}() {}
 
 
 ]]
@@ -86,8 +86,24 @@ set(COPYRIGHT "Copyright 2026")
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 string(TIMESTAMP BUILD_DATE "%Y%m%d")
 
-add_subdirectory(App)
 include(AhoiCppProject.cmake)
+include(AhoiCppExternals.cmake)
+add_library(ahoicpp_externals INTERFACE)
+
+foreach(PATH ${AHOICPP_EXTERNALS_INCLUDE_PATHS})
+    file(GLOB EXPANDED_PATHS ${PATH})
+    foreach(EXPANDED ${EXPANDED_PATHS})
+        if(IS_DIRECTORY ${EXPANDED})
+            target_include_directories(ahoicpp_externals INTERFACE ${EXPANDED})
+        endif()
+    endforeach()
+    if(NOT PATH MATCHES "\\*")
+        if(EXISTS ${PATH})
+            target_include_directories(ahoicpp_externals INTERFACE ${PATH})
+        endif()
+    endif()
+endforeach()
+add_subdirectory(App)
 ]]
 end
 
@@ -103,6 +119,7 @@ configure_file(
 add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries({{PROJECT_NAME}} ahoicpp_externals)
 target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_23)
 include(AhoiCppSubdirs.cmake)
 
@@ -126,8 +143,19 @@ end
 
 function M.get_module_cmake_template()
 	return [[add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
+target_link_libraries({{MODULE_NAME}} ahoicpp_externals)
 target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_23)
 target_include_directories({{MODULE_NAME}} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}})
+]]
+end
+
+function M.get_ahoi_externals_template()
+	return [[#Created automagically by AhoiCpp. You can modify this file to add new external libraries to your project. You just have to follow the pattern:
+set(AHOICPP_EXTERNALS_INCLUDE_PATHS
+    "${CMAKE_CURRENT_SOURCE_DIR}/externals"
+    "${CMAKE_CURRENT_SOURCE_DIR}/externals/*/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/externals/*/src"
+)
 ]]
 end
 
