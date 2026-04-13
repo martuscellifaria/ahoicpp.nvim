@@ -57,6 +57,18 @@ function M.create_main(main_name)
 	if config.options.autocompile_on_create then
 		require("ahoicpp.build").compile()
 	end
+
+	if config.options.git_init then
+		vim.system({ "git", "init" }, {}, function(obj)
+			vim.schedule(function()
+				if obj.code == 0 then
+					vim.notify("Successfully started a git repository the root directory.", vim.log.levels.INFO)
+				else
+					vim.notify("Failed to start repository. Do you have git installed?", vim.log.levels.ERROR)
+				end
+			end)
+		end)
+	end
 end
 
 function M.create_module(module_name, parent_directory_name)

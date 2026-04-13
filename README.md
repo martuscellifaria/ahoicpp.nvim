@@ -59,6 +59,7 @@ AhoiCpp provides a configurable interface. The default follows:
 ```lua
 {
     autocompile_on_create = true,
+    git_init = true,
     keymaps = {
         group_c  = "<leader>c",
         group_cp = "<leader>cp", 
@@ -79,7 +80,7 @@ You are also able to override the keymap bindings, for example:
 {
     'martuscellifaria/ahoicpp.nvim',
     config = function()
-      require('ahoicpp').setup({keymaps = {compile = "<leader>cc",}})
+      require('ahoicpp').setup({keymaps = {compile = "<leader>cc", git_init = false}})
     end,
 }
 ```
@@ -92,6 +93,7 @@ After running `<leader>cpa YourApp`:
 YourApp/
 ├── .ahoicpp
 ├── .gitignore
+├── .git/
 ├── CMakeLists.txt
 ├── AhoiCppProject.cmake
 ├── build.py
