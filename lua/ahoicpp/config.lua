@@ -7,6 +7,7 @@ local M = {}
 
 M.defaults = {
 	autocompile_on_create = true,
+	enable_popups = true,
 	git_init = true,
 	keymaps = {
 		group_c = "<leader>c",

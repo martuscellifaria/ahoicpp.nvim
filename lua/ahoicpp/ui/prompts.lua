@@ -128,8 +128,24 @@ function M.clone_external()
 			vim.schedule(function()
 				if obj.code == 0 then
 					vim.notify("Successfully cloned " .. repo_name, vim.log.levels.INFO)
+					if config.options.enable_popups then
+						local message_lines = {
+							"",
+							repo_name .. " was successfully cloned from " .. input .. ".",
+							"In order to make it available to your classes, you may have to",
+							"add other paths to ./AhoiCppExternals.cmake. ",
+							"There is also the ./externals/README.md as a resource.",
+							"",
+							"",
+							"                                              Press <ENTER> to close",
+						}
+						dialogs.create_popup(repo_name .. " cloned", message_lines)
+					end
 				else
-					vim.notify("Failed to clone repository", vim.log.levels.ERROR)
+					vim.notify(
+						"Failed to clone repository. Check your command, repository, or if you already have it cloned.",
+						vim.log.levels.ERROR
+					)
 				end
 			end)
 		end)
@@ -239,6 +255,7 @@ function M.create_module_directory_input()
 				and directory_name ~= "externals"
 				and not directory_name:match("^%.")
 			then
+				vim.notify("Selected " .. directory_name .. ".")
 				local buf2 = vim.api.nvim_create_buf(false, true)
 				local win2 = dialogs.create_dialog("AhoiCpp Add Module to " .. directory_name, width, 1, buf2)
 
@@ -283,15 +300,16 @@ function M.create_module_directory_input()
 		local input = line:gsub("^Directory Name: ", "")
 
 		if input == "" then
-			cursor = vim.api.nvim_win_get_cursor(completion_win)
-			line = vim.api.nvim_buf_get_lines(completion_buf, cursor[1] - 1, cursor[1], false)[1]
-			if line then
-				vim.api.nvim_set_current_win(win)
-				vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
-				vim.fn.prompt_setprompt(buf, "Directory Name: ")
-				vim.api.nvim_feedkeys(line, "n", false)
-				vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<End>", true, false, true), "n", false)
-				input = line
+			local filtered_dirs = vim.api.nvim_buf_get_lines(completion_buf, 0, -1, false)
+			if #filtered_dirs > 0 and selected_index <= #filtered_dirs then
+				local selected_dir = filtered_dirs[selected_index]
+				vim.fn.prompt_setcallback(buf, function(dir_input)
+					create_directory_and_proceed_to_module(dir_input)
+				end)
+				vim.cmd("stopinsert")
+				vim.fn.prompt_setcallback(buf, function() end)
+				create_directory_and_proceed_to_module(selected_dir)
+				return
 			end
 		end
 		create_directory_and_proceed_to_module(input)

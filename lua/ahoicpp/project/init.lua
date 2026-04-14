@@ -28,6 +28,9 @@ function M.create_main(main_name)
 	fs.create_dir(app_path)
 	fs.create_dir("./externals")
 	fs.write_file("./externals/README.md", templates.get_externals_readme())
+	local readme_template = templates.get_readme_template()
+	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
+	fs.write_file("./README.md", readme_template)
 
 	local main_path = app_path .. "/" .. main_name .. ".cpp"
 	fs.write_file(main_path, templates.get_main_template())
@@ -62,7 +65,21 @@ function M.create_main(main_name)
 		vim.system({ "git", "init" }, {}, function(obj)
 			vim.schedule(function()
 				if obj.code == 0 then
-					vim.notify("Successfully started a git repository the root directory.", vim.log.levels.INFO)
+					vim.system({ "git", "branch", "-m", "master", "main" }, {}, function(obj2)
+						vim.schedule(function()
+							if obj2.code == 0 then
+								vim.notify(
+									"Successfully started a git repository at the root directory.",
+									vim.log.levels.INFO
+								)
+							else
+								vim.notify(
+									"Failed to start repository. Do you have git installed?",
+									vim.log.levels.ERROR
+								)
+							end
+						end)
+					end)
 				else
 					vim.notify("Failed to start repository. Do you have git installed?", vim.log.levels.ERROR)
 				end

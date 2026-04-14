@@ -72,6 +72,22 @@ function M.create_yes_no_dialog(message, callback)
 	end, { buffer = buf })
 end
 
+function M.create_popup(title, lines)
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_name(buf, title)
+
+	local width = 0
+	for _, s in ipairs(lines) do
+		width = math.max(width, #s)
+	end
+
+	M.create_dialog(title, width, #lines, buf)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+	vim.keymap.set("n", "<CR>", ":bd!<CR>", { buffer = buf, silent = true })
+	vim.keymap.set("n", "<Esc>", ":bd!<CR>", { buffer = buf, silent = true })
+end
+
 function M.create_about()
 	local lines = {
 		"",
@@ -88,19 +104,7 @@ function M.create_about()
 		"                                     Press <ENTER> to close",
 	}
 
-	local buf = vim.api.nvim_create_buf(false, true)
-	vim.api.nvim_buf_set_name(buf, "AhoiCppHelp")
-
-	local width = 0
-	for _, s in ipairs(lines) do
-		width = math.max(width, #s)
-	end
-
-	M.create_dialog("About AhoiCpp", width, #lines, buf)
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-
-	vim.keymap.set("n", "<CR>", ":bd!<CR>", { buffer = buf, silent = true })
-	vim.keymap.set("n", "<Esc>", ":bd!<CR>", { buffer = buf, silent = true })
+	M.create_popup("AhoiCppHelp", lines)
 end
 
 return M

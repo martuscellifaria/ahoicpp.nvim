@@ -361,4 +361,11 @@ __pycache__/
 ]]
 end
 
+function M.get_readme_template()
+	return [[# {{PROJECT_NAME}}
+
+Bootstrapped with AhoiCpp
+]]
+end
+
 return M

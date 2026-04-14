@@ -59,6 +59,7 @@ AhoiCpp provides a configurable interface. The default follows:
 ```lua
 {
     autocompile_on_create = true,
+    enable_popups = true,
     git_init = true,
     keymaps = {
         group_c  = "<leader>c",
