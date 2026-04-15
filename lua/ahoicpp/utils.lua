@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local M = {}
 
 function M.file_exists(name)
@@ -14,35 +9,51 @@ function M.write_file(path, content)
 	if M.file_exists(path) then
 		return false
 	end
-	local file = io.open(path, "w")
-	if file then
-		file:write(content)
-		file:close()
-		return true
+	local fd = vim.uv.fs_open(path, "w", 420)
+	if not fd then
+		return false
 	end
-	return false
+	local ok = vim.uv.fs_write(fd, content, 0)
+	vim.uv.fs_close(fd)
+	return ok and true or false
 end
 
 function M.update_file(path, content)
-	if M.file_exists(path) then
-		local file = io.open(path, "w")
-		if file then
-			file:write(content)
-			file:close()
-			return true
-		end
+	if not M.file_exists(path) then
+		return false
 	end
-	return false
+	local fd = vim.uv.fs_open(path, "w", 420)
+	if not fd then
+		return false
+	end
+	local ok = vim.uv.fs_write(fd, content, 0)
+	vim.uv.fs_close(fd)
+	return ok and true or false
 end
 
 function M.read_file(path)
-	local file = io.open(path, "r")
-	if not file then
+	local fd = vim.uv.fs_open(path, "r", 438)
+	if not fd then
 		return nil
 	end
-	local content = file:read("*a")
-	file:close()
-	return content
+	local stat = vim.uv.fs_fstat(fd)
+	if not stat then
+		vim.uv.fs_close(fd)
+		return nil
+	end
+	local data = vim.uv.fs_read(fd, stat.size, 0)
+	vim.uv.fs_close(fd)
+	return data
+end
+
+function M.append_file(path, content)
+	local fd = vim.uv.fs_open(path, "a", 420)
+	if not fd then
+		return false
+	end
+	local ok = vim.uv.fs_write(fd, content, -1)
+	vim.uv.fs_close(fd)
+	return ok and true or false
 end
 
 function M.dir_exists(path)
@@ -77,9 +88,13 @@ end
 
 function M.create_dir(path)
 	if M.dir_exists(path) then
-		return
+		return true
 	end
-	vim.fn.mkdir(path, "p")
+	local ok = vim.fn.mkdir(path, "p") == 1
+	if not ok then
+		vim.notify("Failed to create " .. path)
+	end
+	return ok
 end
 
 function M.is_valid_class_name(class_name)

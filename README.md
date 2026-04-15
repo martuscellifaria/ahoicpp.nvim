@@ -97,8 +97,10 @@ YourApp/
 ├── .git/
 ├── CMakeLists.txt
 ├── AhoiCppProject.cmake
+├── AhoiCppExternals.cmake
 ├── build.py
 ├── App/
+│   ├── AhoiCppSubdirs.cmake
 │   ├── CMakeLists.txt
 │   ├── src/
 │   │   └── YourApp.cpp
@@ -125,6 +127,49 @@ YourApp/
 ## Check Health
 
 For health status of AhoiCpp, you can always run `:checkhealth ahoicpp` from the Neovim command line.
+
+## Tests
+
+### Running tests
+
+AhoiCpp uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for testing. To run the tests:
+
+    1. Ensure Plenary.nvim is installed.
+    2. Navigate to the plugin directory: 
+    ```bash
+    cd ~/.local/share/nvim/lazy/ahoicpp.nvim
+    ```
+    3. Run the tests from the command line:
+    ```bash
+    nvim --headless -c "lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })" -c "qa"
+    ```
+
+You can of course run the tests from inside Neovim. Just navigate to the directory where ahoicpp is installed, open neovim and then run:
+
+```vim
+:lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })
+```
+
+For single file testing, you can use:
+
+```vim
+:lua require('plenary.test_harness').test_file('tests/spec/utils_spec.lua', { minimal_init = 'tests/minimal_init.lua' })
+```
+
+### Test tree
+
+The tests for AhoiCpp are structured as follows:
+
+```
+tests/
+├── minimal_init.lua       # Test environment setup
+└── spec/
+    ├── utils_spec.lua     # Filesystem and validation tests
+    ├── config_spec.lua    # Configuration tests
+    ├── templates_spec.lua # Template generation tests
+    ├── project_spec.lua   # Project creation tests
+    └── build_spec.lua     # Build system tests
+```
 
 ## Troubleshooting
 

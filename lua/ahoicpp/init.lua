@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local config = require("ahoicpp.config")
 local ui = require("ahoicpp.ui")
 local project = require("ahoicpp.project")

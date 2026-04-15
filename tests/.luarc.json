@@ -1,0 +1,21 @@
+{
+  "runtime.version": "LuaJIT",
+  "runtime.path": [
+    "lua/?.lua",
+    "lua/?/init.lua"
+  ],
+  "workspace.library": [
+    "~/path/to/plenary.nvim/lua"
+  ],
+  "diagnostics.globals": [
+    "vim",
+    "describe",
+    "it",
+    "before_each",
+    "after_each",
+    "assert",
+    "stub",
+    "spy",
+    "match"
+  ]
+}

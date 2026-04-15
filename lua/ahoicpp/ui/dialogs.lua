@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local M = {}
 
 function M.create_dialog(dialog_title, dialog_width, dialog_height, buf, row, col)

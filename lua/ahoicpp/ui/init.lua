@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local dialogs = require("ahoicpp.ui.dialogs")
 local prompts = require("ahoicpp.ui.prompts")
 local config = require("ahoicpp.config")

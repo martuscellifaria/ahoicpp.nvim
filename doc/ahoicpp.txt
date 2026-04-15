@@ -1,0 +1,311 @@
+*ahoicpp.txt*          A.H.O.I. C++ Project Bootstrapper for Neovim
+*ahoicpp*              Version 1.0
+
+
+==============================================================================
+CONTENTS                                                      *ahoicpp-contents*
+
+  1. Introduction ................................ |ahoicpp-intro|
+  2. Dependencies ................................ |ahoicpp-dependencies|
+  3. Installation ................................ |ahoicpp-install|
+  4. Configuration ............................... |ahoicpp-config|
+  5. Usage ....................................... |ahoicpp-usage|
+  6. Commands & Keymaps .......................... |ahoicpp-keymaps|
+  7. Project Structure ........................... |ahoicpp-structure|
+  8. Health Check ................................ |ahoicpp-health|
+  9. Development & Testing ....................... |ahoicpp-dev|
+ 10. Troubleshooting ............................. |ahoicpp-troubleshooting|
+ 11. License ..................................... |ahoicpp-license|
+
+
+==============================================================================
+1. INTRODUCTION                                              *ahoicpp-intro*
+
+AhoiCpp is an opinionated way to start cross-platform C++ projects in Neovim.
+AhoiCpp lets you create classes, libraries, and your own app entrypoint with
+the respective build process.
+
+A.H.O.I. stands for "Alex's Heavily Opinionated Interfaces" - a set of tools
+and conventions for C++ development in Neovim.
+
+Features:
+  - Create C++ applications with CMake scaffolding
+  - Add modules (static libraries) to your project
+  - Clone external Git dependencies to an externals directory
+  - Automatic Git initialization
+  - Optional autocompile on project/module creation
+  - Cross-platform build script (Python)
+  - Version embedding for Windows/Linux
+
+
+==============================================================================
+2. DEPENDENCIES                                          *ahoicpp-dependencies*
+
+AhoiCpp requires the following to be installed and available in your PATH:
+
+  - Neovim 0.11 or higher
+  - C++23 capable compiler (g++ 14+ recommended)
+  - CMake 3.28 or higher
+  - Git (optional, for repository initialization and external cloning)
+  - Python 3 (for the build script)
+  - clangd (recommended, for LSP support)
+
+
+==============================================================================
+3. INSTALLATION                                            *ahoicpp-install*
+
+USING LAZY.NVIM ~
+>
+    {
+        'martuscellifaria/ahoicpp.nvim',
+        config = function()
+            require('ahoicpp').setup()
+        end,
+    }
+<
+
+MANUAL INSTALLATION ~
+>
+    git clone https://github.com/martuscellifaria/ahoicpp.nvim \
+        ~/.config/nvim/pack/plugins/start/ahoicpp.nvim
+<
+
+
+==============================================================================
+4. CONFIGURATION                                            *ahoicpp-config*
+
+AhoiCpp can be configured by passing a table to the `setup()` function.
+
+DEFAULT CONFIGURATION ~
+>
+    {
+        autocompile_on_create = true,
+        enable_popups = true,
+        git_init = true,
+        keymaps = {
+            group_c  = "<leader>c",
+            group_cp = "<leader>cp",
+            help = "<leader>cph",
+            create_app = "<leader>cpa",
+            create_module = "<leader>cpm",
+            create_module_dir = "<leader>cpd",
+            clone_external = "<leader>cpe",
+            toggle_autocompile = "<leader>cpt",
+            compile = "<leader>cpc",
+        },
+    }
+<
+
+CONFIGURATION OPTIONS ~
+    *ahoicpp-config-autocompile*
+    `autocompile_on_create` (boolean, default: true)
+        Automatically compile the project after creating a main app or module.
+
+    *ahoicpp-config-popups*
+    `enable_popups` (boolean, default: true)
+        Show popup dialogs for success/confirmation messages.
+
+    *ahoicpp-config-git*
+    `git_init` (boolean, default: true)
+        Automatically run `git init` when creating a new project.
+
+    *ahoicpp-config-keymaps*
+    `keymaps` (table)
+        Configure keybindings. Set any key to `false` to disable it.
+
+EXAMPLE CUSTOM CONFIGURATION ~
+>
+    require('ahoicpp').setup({
+        autocompile_on_create = false,
+        git_init = false,
+        keymaps = {
+            compile = "<leader>cc",
+            create_app = "<leader>ca",
+        }
+    })
+<
+
+
+==============================================================================
+5. USAGE                                                        *ahoicpp-usage*
+
+CREATING A NEW PROJECT ~
+    1. Navigate to an empty directory (or one you want to initialize)
+    2. Press |ahoicpp-create_app| (`<leader>cpa` by default)
+    3. Enter your application name
+    4. AhoiCpp creates the project structure and opens the main.cpp file
+
+ADDING A MODULE ~
+    1. Ensure you're in an AhoiCpp project (`.ahoicpp` file exists)
+    2. Press |ahoicpp-create_module| (`<leader>cpm` by default)
+    3. Enter the module name
+    4. The module is created in the `Modules/` directory
+
+ADDING A MODULE TO A CUSTOM DIRECTORY ~
+    1. Press |ahoicpp-create_module_dir| (`<leader>cpd` by default)
+    2. Select or type a directory name
+    3. Enter the module name
+    4. The module is created in your custom directory
+
+CLONING EXTERNAL DEPENDENCIES ~
+    1. Press |ahoicpp-clone_external| (`<leader>cpe` by default)
+    2. Paste a Git repository URL
+    3. The repository is cloned to the `externals/` directory
+
+COMPILING YOUR PROJECT ~
+    - Press |ahoicpp-compile| (`<leader>cpc` by default)
+    - The build script runs and output is logged to `build/build.log`
+    - clangd LSP is automatically restarted after successful compilation
+
+TOGGLING AUTOCOMPILE ~
+    - Press |ahoicpp-toggle_autocompile| (`<leader>cpt` by default)
+    - Toggles automatic compilation when creating modules/apps
+
+
+==============================================================================
+6. COMMANDS & KEYMAPS                                      *ahoicpp-keymaps*
+
+AhoiCpp does not provide Ex commands. All functionality is accessed through
+Lua functions and keymaps.
+
+DEFAULT KEYMAPS ~
+    *ahoicpp-help*
+    `<leader>cph`               Open the about/help dialog
+
+    *ahoicpp-create_app*
+    `<leader>cpa`               Create a new C++ application
+
+    *ahoicpp-create_module*
+    `<leader>cpm`               Create a module in the Modules/ directory
+
+    *ahoicpp-create_module_dir*
+    `<leader>cpd`               Create a module in a custom directory
+
+    *ahoicpp-clone_external*
+    `<leader>cpe`               Clone an external Git repository
+
+    *ahoicpp-toggle_autocompile*
+    `<leader>cpt`               Toggle autocompile on/off
+
+    *ahoicpp-compile*
+    `<leader>cpc`               Compile the current project
+
+LUA API ~
+    All functions are available on the main module:
+
+    `require('ahoicpp').create_main_input()`      Prompt for app creation
+    `require('ahoicpp').create_module_input()`    Prompt for module creation
+    `require('ahoicpp').compile_app()`            Compile the project
+    `require('ahoicpp').toggle_autocompile()`     Toggle autocompile setting
+    `require('ahoicpp').create_about_ahoicpp()`   Show about dialog
+
+
+==============================================================================
+7. PROJECT STRUCTURE                                    *ahoicpp-structure*
+
+After running `create_app`, the following structure is created:
+
+>
+    YourApp/
+    ├── .ahoicpp                      # Project marker file
+    ├── .gitignore                    # Git ignore patterns
+    ├── .git/                         # Git repository (if enabled)
+    ├── CMakeLists.txt                # Root CMake configuration
+    ├── AhoiCppProject.cmake          # Subdirectory inclusion
+    ├── AhoiCppExternals.cmake        # External library configuration
+    ├── build.py                      # Cross-platform build script
+    ├── README.md                     # Project README
+    ├── App/
+    │   ├── CMakeLists.txt            # App CMake configuration
+    │   ├── AhoiCppSubdirs.cmake      # Module linking
+    │   ├── src/
+    │   │   └── YourApp.cpp           # Main entry point
+    │   ├── version.h.in              # Version header template
+    │   ├── version.c.in              # Linux version source
+    │   └── version.rc.in             # Windows version resource
+    ├── Modules/                      # Project modules (created on demand)
+    │   └── MyModule/
+    │       ├── CMakeLists.txt
+    │       ├── include/
+    │       │   └── MyModule/
+    │       │       └── MyModule.h
+    │       └── src/
+    │           └── MyModule.cpp
+    └── externals/                    # Third-party dependencies
+        └── README.md
+<
+
+
+==============================================================================
+8. HEALTH CHECK                                            *ahoicpp-health*
+
+Run `:checkhealth ahoicpp` to verify your installation.
+
+The health check verifies:
+    - Python availability
+    - Git availability
+    - CMake availability
+    - clangd availability (optional)
+    - Plenary.nvim availability (for development/testing)
+    - Test suite presence (development)
+
+
+==============================================================================
+9. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
+
+AhoiCpp uses Plenary.nvim for testing.
+
+RUNNING TESTS ~
+    Navigate to the plugin directory and run:
+>
+    :lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })
+<
+
+    Or from the command line:
+>
+    nvim --headless -c "lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })" -c "qa"
+<
+
+RUNNING A SINGLE TEST FILE ~
+>
+    :lua require('plenary.test_harness').test_file('tests/spec/utils_spec.lua', { minimal_init = 'tests/minimal_init.lua' })
+<
+
+TEST STRUCTURE ~
+>
+    tests/
+    ├── minimal_init.lua              # Test environment setup
+    └── spec/
+        ├── utils_spec.lua            # Filesystem and validation tests
+        ├── config_spec.lua           # Configuration tests
+        ├── templates_spec.lua        # Template generation tests
+        ├── project_spec.lua          # Project creation tests
+        └── build_spec.lua            # Build system tests
+<
+
+
+==============================================================================
+10. TROUBLESHOOTING                                  *ahoicpp-troubleshooting*
+
+| Error                           | Solution                               |
+| ------------------------------- | -------------------------------------- |
+| "AhoiCpp is not initialized"    | Run |ahoicpp-create_app| first           |
+| "Python not found"              | Install Python and ensure it's in PATH |
+| "CMake not found"               | Install CMake 3.28+                    |
+| "build.py not found"            | Ensure you're in project root          |
+| Compilation fails               | Check `build/build.log` for details    |
+| "Failed to start repository"    | Install Git or set `git_init = false`  |
+| LSP errors after compilation    | Run `:LspRestart` manually             |
+
+
+==============================================================================
+11. LICENSE                                                *ahoicpp-license*
+
+MIT License
+
+Copyright (c) 2026 Alexandre Martuscelli Faria
+
+See the LICENSE file in the repository for full license text.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
