@@ -81,7 +81,7 @@ You are also able to override the keymap bindings, for example:
 {
     'martuscellifaria/ahoicpp.nvim',
     config = function()
-      require('ahoicpp').setup({keymaps = {compile = "<leader>cc", git_init = false}})
+      require('ahoicpp').setup({keymaps = {compile = "<leader>cc"}})
     end,
 }
 ```
