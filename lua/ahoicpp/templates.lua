@@ -158,6 +158,7 @@ function M.get_buildscript()
 	return [[import os
 import sys
 import platform
+import shutil
 
 
 def run_cmake_on_linux(build_type: str, version: str):
@@ -170,7 +171,7 @@ def run_cmake_on_linux(build_type: str, version: str):
         ln -sf build/compile_commands.json ../ &&
         make -j8 > build.log 2>&1
         """
-    if (os.system("command -v ninja > /dev/null") == 0):
+    if shutil.which("ninja") is not None:
         build_command = f"""
         mkdir -p build &&
         cd build &&
@@ -180,7 +181,7 @@ def run_cmake_on_linux(build_type: str, version: str):
         """
     
     status = os.system(build_command)
-    if (status != 0):
+    if status != 0:
         exit_code = os.waitstatus_to_exitcode(status)
         sys.exit(exit_code)
     sys.exit(0)
@@ -194,10 +195,16 @@ def run_cmake_on_windows(build_type: str, version: str):
     """
     os.system(pre_build_command)
     build_command = f"""
-    cd build && cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON;
-    """
+        cd build && cmake .. -D VERSION_ARG="{version}"
+        """
+    if shutil.which("ninja") is not None:
+        build_command = f"""
+            cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
+            """
+    else:
+        print("Ninja not found. Will produce Visual Studio Solution. Please open in Visual Studio or compile it with MSBuild")
     status = os.system(build_command)
-    if (status != 0):
+    if status != 0:
         exit_code = os.waitstatus_to_exitcode(status)
         sys.exit(exit_code)
     sys.exit(0)
