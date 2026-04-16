@@ -28,7 +28,7 @@ function M.compile()
 					if vim.version().minor >= 12 then
 						vim.cmd("lsp restart clangd")
 					else
-						vim.cmd("Lsprestart clangd")
+						vim.cmd("LspRestart clangd")
 					end
 				end
 			else
