@@ -79,8 +79,13 @@ function M.create_popup(title, lines)
 	M.create_dialog(title, width, #lines, buf)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-	vim.keymap.set("n", "<CR>", ":bd!<CR>", { buffer = buf, silent = true })
-	vim.keymap.set("n", "<Esc>", ":bd!<CR>", { buffer = buf, silent = true })
+	vim.keymap.set("n", "<CR>", function()
+		vim.api.nvim_win_close(0, true)
+	end, { buffer = buf, silent = true })
+
+	vim.keymap.set("n", "<Esc>", function()
+		vim.api.nvim_win_close(0, true)
+	end, { buffer = buf, silent = true })
 end
 
 function M.create_about()

@@ -115,6 +115,7 @@ add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries({{PROJECT_NAME}} ahoicpp_externals)
+target_link_libraries(Ahoi ahoicpp_externals ${AHOICPP_EXTERNALS_TARGETS})
 target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_23)
 include(AhoiCppSubdirs.cmake)
 
@@ -170,6 +171,7 @@ def run_cmake_on_linux(build_type: str, version: str):
         cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
         make -j8 > build.log 2>&1
+
         """
     if shutil.which("ninja") is not None:
         build_command = f"""
@@ -186,29 +188,33 @@ def run_cmake_on_linux(build_type: str, version: str):
         sys.exit(exit_code)
     sys.exit(0)
 
-
 def run_cmake_on_windows(build_type: str, version: str):
     if version == "":
         version = "99.99.99.99"
+
     pre_build_command = f"""
     if not exist build mkdir build;
     """
     os.system(pre_build_command)
+    
     build_command = f"""
         cd build && cmake .. -D VERSION_ARG="{version}"
         """
+
     if shutil.which("ninja") is not None:
         build_command = f"""
-            cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
-            """
+        cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -DVERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
+        """
     else:
         print("Ninja not found. Will produce Visual Studio Solution. Please open in Visual Studio or compile it with MSBuild")
+
     status = os.system(build_command)
+
     if status != 0:
         exit_code = os.waitstatus_to_exitcode(status)
         sys.exit(exit_code)
-    sys.exit(0)
 
+    sys.exit(0)
 
 def run_app(build_type: str, version: str):
     operating_system = platform.system()

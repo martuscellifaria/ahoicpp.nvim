@@ -1,3 +1,8 @@
+-- AhoiCpp
+-- Developed by Alexandre Martuscelli Faria
+-- Copyright 2026
+-- License MIT
+
 local M = {}
 
 M.defaults = {

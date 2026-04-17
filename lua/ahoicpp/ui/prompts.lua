@@ -41,6 +41,7 @@ local function create_prompt_dialog(title, prompt_text, callback, start_insert)
 end
 
 function M.create_main_input()
+	local sep = package.config:sub(1, 1)
 	local function proceed()
 		create_prompt_dialog("AhoiCpp Add Main", "App Name: ", function(input)
 			if input and utils.is_valid_class_name(input) then
@@ -51,8 +52,8 @@ function M.create_main_input()
 		end)
 	end
 
-	if utils.file_exists("./.ahoicpp") then
-		if utils.dir_exists("./App") then
+	if utils.file_exists("." .. sep .. ".ahoicpp") then
+		if utils.dir_exists("." .. sep .. "App") then
 			vim.notify(
 				"You appear to have a main app already. Please check your project structure.",
 				vim.log.levels.WARN
@@ -80,7 +81,8 @@ function M.create_main_input()
 end
 
 function M.create_module_input()
-	if not utils.file_exists("./.ahoicpp") then
+	local sep = package.config:sub(1, 1)
+	if not utils.file_exists("." .. sep .. ".ahoicpp") then
 		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
 		return
 	end
@@ -95,17 +97,7 @@ function M.create_module_input()
 end
 
 function M.clone_external()
-	if not utils.file_exists("./.ahoicpp") then
-		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
-		return
-	end
-
-	create_prompt_dialog("AhoiCpp Clone External from Git", "git clone ", function(input)
-		if not input or input == "" then
-			vim.notify("Invalid input provided.", vim.log.levels.WARN)
-			return
-		end
-
+	local function run_clone(input, header_only)
 		local function get_repo_name(url)
 			local name = url:gsub("%.git$", "")
 			name = name:match("([^/]+)$")
@@ -116,6 +108,19 @@ function M.clone_external()
 		if not repo_name then
 			vim.notify("Could not parse repository name from URL.", vim.log.levels.ERROR)
 			return
+		end
+
+		if not header_only then
+			local cmake_path = "./AhoiCppExternals.cmake"
+			local text_to_append =
+				[[file(GLOB {{REPO_NAME}}_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/src/*.cpp")
+add_library({{REPO_NAME}} STATIC ${{{REPO_NAME}}_SOURCES})
+target_compile_features({{REPO_NAME}} PUBLIC cxx_std_23)
+target_include_directories({{REPO_NAME}} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/src")
+list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
+			text_to_append = text_to_append:gsub("{{REPO_NAME}}", repo_name)
+			utils.append_file(cmake_path, text_to_append .. "\n")
 		end
 
 		vim.notify("Starting to clone " .. repo_name .. " from " .. input, vim.log.levels.INFO)
@@ -135,6 +140,11 @@ function M.clone_external()
 							"                                              Press <ENTER> to close",
 						}
 						dialogs.create_popup(repo_name .. " cloned", message_lines)
+						if config.options.autocompile_on_create then
+							vim.defer_fn(function()
+								require("ahoicpp.build").compile()
+							end, 50)
+						end
 					end
 				else
 					vim.notify(
@@ -144,11 +154,39 @@ function M.clone_external()
 				end
 			end)
 		end)
+	end
+	local sep = package.config:sub(1, 1)
+	if not utils.file_exists("." .. sep .. ".ahoicpp") then
+		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
+		return
+	end
+
+	create_prompt_dialog("AhoiCpp Clone External from Git", "git clone ", function(input)
+		if not input or input == "" then
+			vim.notify("Invalid input provided.", vim.log.levels.WARN)
+			return
+		end
+
+		dialogs.create_yes_no_dialog({
+			"",
+			"Is this a header-only library?",
+			"",
+			"",
+		}, function(confirmed)
+			if confirmed ~= nil then
+				if confirmed then
+					run_clone(input, true)
+				else
+					run_clone(input, false)
+				end
+			end
+		end)
 	end)
 end
 
 function M.create_module_directory_input()
-	if not utils.file_exists("./.ahoicpp") then
+	local sep = package.config:sub(1, 1)
+	if not utils.file_exists("." .. sep .. ".ahoicpp") then
 		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
 		return
 	end
