@@ -1,4 +1,5 @@
 local utils = require("ahoicpp.utils")
+local config = require("ahoicpp.config")
 
 local M = {}
 
@@ -13,16 +14,21 @@ function M.compile()
 		return
 	end
 
+	local compile_as = "rel"
+	if config.options.compile_as_debug then
+		compile_as = "deb"
+	end
+
 	if not utils.file_exists("build.py") then
 		vim.notify("build.py not found. Are you sure you have created your app?", vim.log.levels.WARN)
 		return
 	end
 
 	vim.notify("Starting compilation.", vim.log.levels.INFO)
-	vim.system({ python, "build.py", "abcde" }, { text = true }, function(obj)
+	vim.system({ python, "build.py", compile_as }, { text = true }, function(obj)
 		vim.schedule(function()
 			if obj.code == 0 then
-				vim.notify("C++ app compilation finished.", vim.log.levels.INFO)
+				vim.notify("C++ app (" .. compile_as .. ") compilation finished.", vim.log.levels.INFO)
 				local clients = vim.lsp.get_clients({ name = "clangd" })
 				if #clients > 0 then
 					if vim.version().minor >= 12 then

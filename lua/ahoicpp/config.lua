@@ -7,6 +7,7 @@ local M = {}
 
 M.defaults = {
 	autocompile_on_create = true,
+	compile_as_debug = false,
 	enable_popups = true,
 	git_init = true,
 	keymaps = {

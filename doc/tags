@@ -1,4 +1,3 @@
-!_TAG_FILE_ENCODING	utf-8
 ahoicpp	ahoicpp.txt	/*ahoicpp*
 ahoicpp-clone_external	ahoicpp.txt	/*ahoicpp-clone_external*
 ahoicpp-compile	ahoicpp.txt	/*ahoicpp-compile*
@@ -23,3 +22,4 @@ ahoicpp-structure	ahoicpp.txt	/*ahoicpp-structure*
 ahoicpp-toggle_autocompile	ahoicpp.txt	/*ahoicpp-toggle_autocompile*
 ahoicpp-troubleshooting	ahoicpp.txt	/*ahoicpp-troubleshooting*
 ahoicpp-usage	ahoicpp.txt	/*ahoicpp-usage*
+ahoicpp.txt	ahoicpp.txt	/*ahoicpp.txt*

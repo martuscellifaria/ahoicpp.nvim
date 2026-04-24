@@ -247,6 +247,8 @@ if __name__ == '__main__':
                 run_app("RelWithDebInfo", "")
             case _:
                 print("Invalid input. Bye.")
+    elif (sys.argv[1] == "deb"):
+        run_app("RelWithDebInfo", "")
     else:
         run_app("Release", "")
 ]]
