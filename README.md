@@ -50,7 +50,7 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 | `<leader>cpd` | Creates C++ class within custom named directory and add CMake files          |
 | `<leader>cpe` | Clones external Git repository to the externals directory of the C++ project |
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
-| `<leader>cpt` | Toggles build type (release/debug)                                           |
+| `<leader>cpb` | Toggles build type (release/debug)                                           |
 | `<leader>cpc` | Compiles the current C++ project                                             |
 
 ### Configuration
