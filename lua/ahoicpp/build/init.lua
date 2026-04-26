@@ -3,7 +3,12 @@ local config = require("ahoicpp.config")
 
 local M = {}
 
+local compiling = false
 function M.compile()
+	if compiling then
+		vim.notify("Your project is already being compiled. Please wait until it finishes.", vim.log.levels.WARN)
+		return
+	end
 	local python = ""
 	if vim.fn.executable("python") == 1 then
 		python = "python"
@@ -25,9 +30,11 @@ function M.compile()
 	end
 
 	vim.notify("Starting compilation.", vim.log.levels.INFO)
+	compiling = true
 	vim.system({ python, "build.py", compile_as }, { text = true }, function(obj)
 		vim.schedule(function()
 			if obj.code == 0 then
+				compiling = false
 				vim.notify("C++ app (" .. compile_as .. ") compilation finished.", vim.log.levels.INFO)
 				local clients = vim.lsp.get_clients({ name = "clangd" })
 				if #clients > 0 then
@@ -38,6 +45,7 @@ function M.compile()
 					end
 				end
 			else
+				compiling = false
 				vim.notify("Failed to compile. Please read build.log", vim.log.levels.ERROR)
 				vim.cmd("edit ./build/build.log")
 			end

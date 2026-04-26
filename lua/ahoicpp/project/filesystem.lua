@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local utils = require("ahoicpp.utils")
 
 return {

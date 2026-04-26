@@ -31,6 +31,7 @@ function M.setup_keymaps()
 	map_if(km.create_module_dir, prompts.create_module_directory_input, "Create custom module with [d]irectory")
 	map_if(km.clone_external, prompts.clone_external, "Clone [e]xternal dependency from Git")
 	map_if(km.toggle_autocompile, config.toggle_autocompile, "[t]oggle autocompile app")
+	map_if(km.toggle_debug_compilation, config.toggle_debug_compilation, "Toggle compile as de[b]ug")
 end
 
 return M

@@ -6,13 +6,11 @@ describe("ahoicpp.utils", function()
 	local original_cwd
 
 	before_each(function()
-		-- Create temp directory for filesystem tests
 		tmp_dir = vim.fn.tempname()
 		vim.fn.mkdir(tmp_dir)
 		original_cwd = vim.fn.getcwd()
 		vim.cmd("cd " .. tmp_dir)
 
-		-- Fresh require for isolation
 		package.loaded["ahoicpp.utils"] = nil
 		utils = require("ahoicpp.utils")
 	end)

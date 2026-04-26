@@ -22,6 +22,7 @@ M.create_module_directory_input = ui.prompts.create_module_directory_input
 M.compile_app = build.compile
 M.clone_external_from_git = ui.prompts.clone_external
 M.toggle_autocompile = config.toggle_autocompile
+M.toggle_debug_compilation = config.toggle_debug_compilation
 M.config = config.options
 
 return M

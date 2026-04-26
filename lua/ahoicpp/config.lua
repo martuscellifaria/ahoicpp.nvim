@@ -1,8 +1,3 @@
--- AhoiCpp
--- Developed by Alexandre Martuscelli Faria
--- Copyright 2026
--- License MIT
-
 local M = {}
 
 M.defaults = {
@@ -20,6 +15,7 @@ M.defaults = {
 		create_module_dir = "<leader>cpd",
 		clone_external = "<leader>cpe",
 		toggle_autocompile = "<leader>cpt",
+		toggle_debug_compilation = "<leader>cpb",
 	},
 }
 
@@ -33,6 +29,12 @@ function M.toggle_autocompile()
 	M.options.autocompile_on_create = not M.options.autocompile_on_create
 	local status = M.options.autocompile_on_create and "activated" or "deactivated"
 	vim.notify("Autocompile on create " .. status, vim.log.levels.INFO)
+end
+
+function M.toggle_debug_compilation()
+	M.options.compile_as_debug = not M.options.compile_as_debug
+	local build_type = M.options.compile_as_debug and "debug" or "release"
+	vim.notify("Changed compilation to " .. build_type, vim.log.levels.INFO)
 end
 
 return M
