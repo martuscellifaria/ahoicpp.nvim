@@ -62,6 +62,10 @@ function M.create_yes_no_dialog(message, callback)
 		close(choice)
 	end, { buffer = buf })
 
+	vim.keymap.set("n", "<kEnter>", function()
+		close(choice)
+	end, { buffer = buf })
+
 	vim.keymap.set("n", "<Esc>", function()
 		close(nil)
 	end, { buffer = buf })
@@ -80,6 +84,10 @@ function M.create_popup(title, lines)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
 	vim.keymap.set("n", "<CR>", function()
+		vim.api.nvim_win_close(0, true)
+	end, { buffer = buf, silent = true })
+
+	vim.keymap.set("n", "<kEnter>", function()
 		vim.api.nvim_win_close(0, true)
 	end, { buffer = buf, silent = true })
 
