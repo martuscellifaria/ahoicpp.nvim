@@ -16,7 +16,12 @@ M.defaults = {
 		clone_external = "<leader>cpe",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
+		vandamme_coding = "<leader>cvc",
+		vandamme_explain = "<leader>cve",
 	},
+	vandamme_endpoint = "http://localhost:8080/completion",
+	vandamme_temperature = 0.2,
+	vandamme_max_tokens = 500,
 }
 
 M.options = vim.deepcopy(M.defaults)

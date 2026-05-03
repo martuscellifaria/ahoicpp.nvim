@@ -1,6 +1,7 @@
 local dialogs = require("ahoicpp.ui.dialogs")
 local prompts = require("ahoicpp.ui.prompts")
 local config = require("ahoicpp.config")
+local vandamme = require("ahoicpp.vandamme")
 
 local M = {
 	dialogs = dialogs,
@@ -32,6 +33,8 @@ function M.setup_keymaps()
 	map_if(km.clone_external, prompts.clone_external, "Clone [e]xternal dependency from Git")
 	map_if(km.toggle_autocompile, config.toggle_autocompile, "[t]oggle autocompile app")
 	map_if(km.toggle_debug_compilation, config.toggle_debug_compilation, "Toggle compile as de[b]ug")
+	map_if(km.vandamme_coding, vandamme.insert_code_with_prompt, "Generate [v]andamme [c]ode")
+	map_if(km.vandamme_explain, vandamme.explain_selection, "[v]andamme [e]xplains selected code")
 end
 
 return M

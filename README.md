@@ -52,6 +52,8 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
 | `<leader>cpb` | Toggles build type (release/debug)                                           |
 | `<leader>cpc` | Compiles the current C++ project                                             |
+| `<leader>cvc` | Generates code with vandamme                                                 |
+| `<leader>cve` | Get vandamme to explain the code selected                                    |
 
 ### Configuration
 
@@ -59,22 +61,27 @@ AhoiCpp provides a configurable interface. The default follows:
 
 ```lua
 {
-    autocompile_on_create = true,
-    compile_as_debug = false,
-    enable_popups = true,
-    git_init = true,
-    keymaps = {
-        group_c  = "<leader>c",
-        group_cp = "<leader>cp", 
-        help = "<leader>cph",
-        create_app = "<leader>cpa",
-        create_module = "<leader>cpm",
-        create_module_dir = "<leader>cpd",
-        clone_external = "<leader>cpe",
-        toggle_autocompile = "<leader>cpt",
-        toggle_debug_compilation = "<leader>cpb",
-        compile = "<leader>cpc",
-    },
+	autocompile_on_create = true,
+	compile_as_debug = false,
+	enable_popups = true,
+	git_init = true,
+	keymaps = {
+		group_c = "<leader>c",
+		group_cp = "<leader>cp",
+		create_app = "<leader>cpa",
+		help = "<leader>cph",
+		create_module = "<leader>cpm",
+		compile = "<leader>cpc",
+		create_module_dir = "<leader>cpd",
+		clone_external = "<leader>cpe",
+		toggle_autocompile = "<leader>cpt",
+		toggle_debug_compilation = "<leader>cpb",
+		vandamme_coding = "<leader>cvc",
+		vandamme_explain = "<leader>cve",
+	},
+	vandamme_endpoint = "http://localhost:8080/completion",
+	vandamme_temperature = 0.2,
+	vandamme_max_tokens = 500,
 }
 ```
 
@@ -88,6 +95,12 @@ You are also able to override the keymap bindings, for example:
     end,
 }
 ```
+
+### vandamme coding agent (experimental under dev)
+
+`AhoiCpp` is introducing a coding agent functionality called `vandamme` (lots of puns intended). This is still very experimental.
+By running `<leader>cvc` you will be asked what `vandamme` should generate for you. With a few instructions, it will try to tackle your C++ problem and paste the solution where your cursor is placed at.
+I tried this locally at home using Qwen2.5-Coder-1.5B-Instruct-Q4_K_M and it works pretty ok. `vandamme` is targeted for using `llamacpp` or `ollama`, so you will have to configure a few things at the installation setup. Otherwise, `AhoiCpp` will just work as usual. 
 
 ### Project structure
 
