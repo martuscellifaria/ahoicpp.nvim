@@ -378,4 +378,12 @@ Bootstrapped with AhoiCpp
 ]]
 end
 
+function M.get_project_json_template()
+	return [[{
+	"project_name": "{{PROJECT_NAME}}",
+	"build_path": ".{{SEP}}build{{SEP}}App{{SEP}}",
+	"execution_path": ".{{SEP}}build{{SEP}}App{{SEP}}"
+}]]
+end
+
 return M

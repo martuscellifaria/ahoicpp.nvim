@@ -1,6 +1,9 @@
 local M = {}
 
 function M.file_exists(name)
+	if name:sub(1, 1) == "~" then
+		name = vim.fn.expand(name)
+	end
 	local stat = vim.uv.fs_stat(name)
 	return stat and stat.type == "file" or false
 end

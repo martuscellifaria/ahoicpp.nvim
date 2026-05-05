@@ -74,10 +74,14 @@ end
 function M.create_popup(title, lines)
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_name(buf, title)
+	vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
 
 	local width = 0
 	for _, s in ipairs(lines) do
 		width = math.max(width, #s)
+	end
+	if width > 100 then
+		width = 100
 	end
 
 	M.create_dialog(title, width, #lines, buf)

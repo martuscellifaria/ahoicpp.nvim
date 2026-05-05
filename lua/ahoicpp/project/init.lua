@@ -33,6 +33,11 @@ function M.create_main(main_name)
 	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
 
+	local project_json_template = templates.get_project_json_template()
+	project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
+	project_json_template = project_json_template:gsub("{{SEP}}", sep)
+	fs.write_file("." .. sep .. "ahoicpp_project.json", project_json_template)
+
 	local main_path = app_path .. sep .. main_name .. ".cpp"
 	fs.write_file(main_path, templates.get_main_template())
 	vim.cmd("edit " .. main_path)

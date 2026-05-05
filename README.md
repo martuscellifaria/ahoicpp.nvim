@@ -44,14 +44,18 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 
 | Command       | Description                                                                  |
 | ------------- | ---------------------------------------------------------------------------- |
-| `<leader>cph` | Opens the about/help menu from AhoiCpp                                       |
 | `<leader>cpa` | Creates C++ application with respective CMake files and scripts              |
+| `<leader>cph` | Opens the about/help menu from AhoiCpp                                       |
 | `<leader>cpm` | Creates C++ class within modules directory and add CMake files               |
 | `<leader>cpd` | Creates C++ class within custom named directory and add CMake files          |
+| `<leader>cpc` | Compiles the current C++ project                                             |
 | `<leader>cpe` | Clones external Git repository to the externals directory of the C++ project |
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
 | `<leader>cpb` | Toggles build type (release/debug)                                           |
-| `<leader>cpc` | Compiles the current C++ project                                             |
+| `<leader>cpx` | Executes the compiled binary                                                 |
+| `<leader>cec` | Generates code with Escafandro                                               |
+| `<leader>cee` | Get Escafandro to explain the code selected                                  |
+| `<leader>cet` | Toggle Escafandro debug assist functionality                                 |
 
 ### Configuration
 
@@ -59,22 +63,33 @@ AhoiCpp provides a configurable interface. The default follows:
 
 ```lua
 {
-    autocompile_on_create = true,
-    compile_as_debug = false,
-    enable_popups = true,
-    git_init = true,
-    keymaps = {
-        group_c  = "<leader>c",
-        group_cp = "<leader>cp", 
-        help = "<leader>cph",
-        create_app = "<leader>cpa",
-        create_module = "<leader>cpm",
-        create_module_dir = "<leader>cpd",
-        clone_external = "<leader>cpe",
-        toggle_autocompile = "<leader>cpt",
-        toggle_debug_compilation = "<leader>cpb",
-        compile = "<leader>cpc",
-    },
+	autocompile_on_create = true,
+	compile_as_debug = false,
+	enable_popups = true,
+	git_init = true,
+	keymaps = {
+		group_c = "<leader>c",
+		group_cp = "<leader>cp",
+		create_app = "<leader>cpa",
+		help = "<leader>cph",
+		create_module = "<leader>cpm",
+		create_module_dir = "<leader>cpd",
+		compile = "<leader>cpc",
+		clone_external = "<leader>cpe",
+		toggle_autocompile = "<leader>cpt",
+		toggle_debug_compilation = "<leader>cpb",
+		execute_app = "<leader>cpx",
+		escafandro_coding = "<leader>cec",
+		escafandro_explain = "<leader>cee",
+		toggle_escafandro_debug_assist = "<leader>cet",
+	},
+	escafandro = {
+		ip = "",
+		engine = "",
+		model = "",
+		max_tokens = 0,
+		debug_assist = false,
+	},
 }
 ```
 
@@ -89,6 +104,12 @@ You are also able to override the keymap bindings, for example:
 }
 ```
 
+### Escafandro coding agent
+
+`AhoiCpp` is introducing a coding agent functionality called `Escafandro`. This is still experimental.
+By running `<leader>cec` you will be asked what piece of C++ code `Escafandro` should generate for you. With a few instructions, it will produce the code where your cursor was placed at the moment you run it.
+`Escafandro` is targeted for local LLMs, using `llamacpp` or `ollama` as its engines, so you will have to configure a few things at the installation setup. Otherwise, `AhoiCpp` will just work as usual. 
+
 ### Project structure
 
 After running `<leader>cpa YourApp`:
@@ -98,10 +119,11 @@ YourApp/
 ├── .ahoicpp
 ├── .gitignore
 ├── .git/
-├── CMakeLists.txt
-├── AhoiCppProject.cmake
 ├── AhoiCppExternals.cmake
+├── AhoiCppProject.cmake
+├── ahoicpp_project.json
 ├── build.py
+├── CMakeLists.txt
 ├── App/
 │   ├── AhoiCppSubdirs.cmake
 │   ├── CMakeLists.txt
