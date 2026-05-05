@@ -2,6 +2,7 @@ local dialogs = require("ahoicpp.ui.dialogs")
 local project = require("ahoicpp.project")
 local utils = require("ahoicpp.utils")
 local config = require("ahoicpp.config")
+local escafandro = require("ahoicpp.escafandro")
 
 local M = {}
 
@@ -31,6 +32,10 @@ local function create_prompt_dialog(title, prompt_text, callback, start_insert)
 			callback(input)
 		end
 	end)
+
+	vim.keymap.set("n", "<Esc>", function()
+		vim.api.nvim_win_close(0, true)
+	end, { buffer = buf, silent = true })
 
 	vim.api.nvim_create_autocmd("BufLeave", {
 		buffer = buf,
@@ -369,6 +374,69 @@ function M.create_module_directory_input()
 	end
 
 	vim.cmd("startinsert")
+end
+
+function M.escafandro_code_prompt()
+	local buf = vim.api.nvim_buf_get_name(0)
+	if buf == "" then
+		vim.notify("Escafandro Codegen needs a file opened.", vim.log.levels.WARN)
+		return
+	end
+	if config.options.escafandro.ip == "" then
+		vim.notify("Escafandro endpoint not configured.", vim.log.levels.WARN)
+		return
+	end
+	create_prompt_dialog("AhoiCpp Escafandro Codegen", "Instructions: ", function(input)
+		if input and input ~= "" then
+			escafandro.insert_code(input)
+		else
+			vim.notify("Invalid input. Exiting Escafandro.", vim.log.levels.WARN)
+		end
+	end)
+end
+
+function M.escafandro_code_refactor()
+	if config.options.escafandro.ip == "" then
+		vim.notify("Escafandro endpoint not configured.", vim.log.levels.WARN)
+		return
+	end
+	escafandro.refactor_selection()
+end
+
+function M.escafandro_explain()
+	escafandro.explain_selection(function(explanation)
+		if explanation and explanation ~= "" then
+			local message_lines = {
+				"",
+				explanation,
+				"",
+				"",
+				"                                              Press <ENTER> to close",
+			}
+			dialogs.create_popup("AhoiCpp Escafandro Explain", message_lines)
+		end
+	end)
+end
+
+function M.escafandro_debug()
+	local debug_info
+	if utils.file_exists("./build/build.log") then
+		debug_info = utils.read_file("./build/build.log")
+	end
+	if debug_info and debug_info ~= "" then
+		escafandro.explain_build_message(debug_info, function(explanation)
+			if explanation and explanation ~= "" then
+				local message_lines = {
+					"",
+					explanation,
+					"",
+					"",
+					"                                              Press <ENTER> to close",
+				}
+				dialogs.create_popup("AhoiCpp Escafandro Debug", message_lines)
+			end
+		end)
+	end
 end
 
 return M

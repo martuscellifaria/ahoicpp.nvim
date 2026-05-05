@@ -44,16 +44,18 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 
 | Command       | Description                                                                  |
 | ------------- | ---------------------------------------------------------------------------- |
-| `<leader>cph` | Opens the about/help menu from AhoiCpp                                       |
 | `<leader>cpa` | Creates C++ application with respective CMake files and scripts              |
+| `<leader>cph` | Opens the about/help menu from AhoiCpp                                       |
 | `<leader>cpm` | Creates C++ class within modules directory and add CMake files               |
 | `<leader>cpd` | Creates C++ class within custom named directory and add CMake files          |
+| `<leader>cpc` | Compiles the current C++ project                                             |
 | `<leader>cpe` | Clones external Git repository to the externals directory of the C++ project |
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
 | `<leader>cpb` | Toggles build type (release/debug)                                           |
-| `<leader>cpc` | Compiles the current C++ project                                             |
-| `<leader>cvc` | Generates code with vandamme                                                 |
-| `<leader>cve` | Get vandamme to explain the code selected                                    |
+| `<leader>cpx` | Executes the compiled binary                                                 |
+| `<leader>cec` | Generates code with Escafandro                                               |
+| `<leader>cee` | Get Escafandro to explain the code selected                                  |
+| `<leader>cet` | Toggle Escafandro debug assist functionality                                 |
 
 ### Configuration
 
@@ -71,17 +73,23 @@ AhoiCpp provides a configurable interface. The default follows:
 		create_app = "<leader>cpa",
 		help = "<leader>cph",
 		create_module = "<leader>cpm",
-		compile = "<leader>cpc",
 		create_module_dir = "<leader>cpd",
+		compile = "<leader>cpc",
 		clone_external = "<leader>cpe",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
-		vandamme_coding = "<leader>cvc",
-		vandamme_explain = "<leader>cve",
+		execute_app = "<leader>cpx",
+		escafandro_coding = "<leader>cec",
+		escafandro_explain = "<leader>cee",
+		toggle_escafandro_debug_assist = "<leader>cet",
 	},
-	vandamme_endpoint = "http://localhost:8080/completion",
-	vandamme_temperature = 0.2,
-	vandamme_max_tokens = 500,
+	escafandro = {
+		ip = "",
+		engine = "",
+		model = "",
+		max_tokens = 0,
+		debug_assist = false,
+	},
 }
 ```
 
@@ -96,11 +104,11 @@ You are also able to override the keymap bindings, for example:
 }
 ```
 
-### vandamme coding agent (experimental under dev)
+### Escafandro coding agent
 
-`AhoiCpp` is introducing a coding agent functionality called `vandamme` (lots of puns intended). This is still very experimental.
-By running `<leader>cvc` you will be asked what `vandamme` should generate for you. With a few instructions, it will try to tackle your C++ problem and paste the solution where your cursor is placed at.
-I tried this locally at home using Qwen2.5-Coder-1.5B-Instruct-Q4_K_M and it works pretty ok. `vandamme` is targeted for using `llamacpp` or `ollama`, so you will have to configure a few things at the installation setup. Otherwise, `AhoiCpp` will just work as usual. 
+`AhoiCpp` is introducing a coding agent functionality called `Escafandro`. This is still experimental.
+By running `<leader>cec` you will be asked what piece of C++ code `Escafandro` should generate for you. With a few instructions, it will produce the code where your cursor was placed at the moment you run it.
+`Escafandro` is targeted for local LLMs, using `llamacpp` or `ollama` as its engines, so you will have to configure a few things at the installation setup. Otherwise, `AhoiCpp` will just work as usual. 
 
 ### Project structure
 
@@ -111,10 +119,11 @@ YourApp/
 ├── .ahoicpp
 ├── .gitignore
 ├── .git/
-├── CMakeLists.txt
-├── AhoiCppProject.cmake
 ├── AhoiCppExternals.cmake
+├── AhoiCppProject.cmake
+├── ahoicpp_project.json
 ├── build.py
+├── CMakeLists.txt
 ├── App/
 │   ├── AhoiCppSubdirs.cmake
 │   ├── CMakeLists.txt
