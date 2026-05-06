@@ -41,7 +41,7 @@ function M.get_main_template()
     #include <cerrno>
 #endif
 
-extern const char* embeddedVersion;
+extern const char* embedded_version;
 
 int main() {
     std::println("AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)");
@@ -63,7 +63,7 @@ function M.get_parent_cmake_template()
 if(DEFINED VERSION_ARG)
     set(PROJECT_VERSION ${VERSION_ARG})
 else()
-    set(PROJECT_VERSION "99.99.99.99") 
+    set(PROJECT_VERSION "99.99.99") 
 endif()
 
 project({{PROJECT_NAME}} VERSION ${PROJECT_VERSION})
@@ -71,7 +71,6 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(VER_MAJOR ${PROJECT_VERSION_MAJOR})
 set(VER_MINOR ${PROJECT_VERSION_MINOR})
 set(VER_PATCH ${PROJECT_VERSION_PATCH})
-set(VER_REVISION ${PROJECT_VERSION_TWEAK})
 set(VERSION ${PROJECT_VERSION})
 set(COMPANY "AHOI Labs")
 set(DESCRIPTION "Your project is owned by A.H.O.I Labs")
@@ -164,7 +163,7 @@ import shutil
 
 def run_cmake_on_linux(build_type: str, version: str):
     if version == "":
-        version = "99.99.99.99"
+        version = "99.99.99"
     build_command = f"""
         mkdir -p build &&
         cd build &&
@@ -190,7 +189,7 @@ def run_cmake_on_linux(build_type: str, version: str):
 
 def run_cmake_on_windows(build_type: str, version: str):
     if version == "":
-        version = "99.99.99.99"
+        version = "99.99.99"
 
     pre_build_command = f"""
     if not exist build mkdir build;
@@ -256,7 +255,7 @@ end
 
 function M.get_version_c_in()
 	return [[
-const char* embeddedVersion =
+const char* embedded_version =
     "@PROJECT_NAME@ version: @VERSION@\n"
     "Build type: @CMAKE_BUILD_TYPE@\n"
     "Copyright: @COPYRIGHT@\n"
@@ -271,15 +270,15 @@ function M.get_version_h_in()
 #define PROJECT_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define PROJECT_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define PROJECT_VERSION_PATCH @PROJECT_VERSION_PATCH@
-#define PROJECT_VERSION_REVISION @PROJECT_VERSION_TWEAK@]]
+]]
 end
 
 function M.get_version_rc_in()
 	return [[#include <windows.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION    @VER_MAJOR@,@VER_MINOR@,@VER_PATCH@,@VER_REVISION@
-PRODUCTVERSION @VER_MAJOR@,@VER_MINOR@,@VER_PATCH@,@VER_REVISION@
+FILEVERSION    @VER_MAJOR@,@VER_MINOR@,@VER_PATCH@
+PRODUCTVERSION @VER_MAJOR@,@VER_MINOR@,@VER_PATCH@
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS VOS_NT_WINDOWS32
