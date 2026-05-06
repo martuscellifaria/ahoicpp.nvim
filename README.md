@@ -59,7 +59,7 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 
 ### Configuration
 
-AhoiCpp provides a configurable interface. The default follows:
+AhoiCpp provides a configurable interface. An example follows:
 
 ```lua
 {
@@ -84,31 +84,35 @@ AhoiCpp provides a configurable interface. The default follows:
 		toggle_escafandro_debug_assist = "<leader>cet",
 	},
 	escafandro = {
-		ip = "",
-		engine = "",
-		model = "",
-		max_tokens = 0,
-		debug_assist = false,
+		ip = "127.0.0.1:8080",
+		engine = "llamacpp",
+		model = "qwen2.5-coder-7b-instruct-q4_k_m",
+		max_tokens = 500,
+		debug_assist = true,
 	},
 }
 ```
 
-You are also able to override the keymap bindings, for example:
+You are also able to override the keymap bindings or options, for example:
 
 ```lua
 {
     'martuscellifaria/ahoicpp.nvim',
     config = function()
-      require('ahoicpp').setup({keymaps = {compile = "<leader>cc"}})
+      require('ahoicpp').setup({ autocompile_on_create = false, keymaps = { compile = "<leader>cc" } })
     end,
 }
 ```
 
 ### Escafandro coding agent
 
-`AhoiCpp` is introducing a coding agent functionality called `Escafandro`. This is still experimental.
+`AhoiCpp` is introducing sort of a coding agent functionality called `Escafandro`. This is still experimental and based on [TJ DeVries](https://github.com/tjdevries) presentation at Omacon 2026 idea for just in time software without having to search online.
 By running `<leader>cec` you will be asked what piece of C++ code `Escafandro` should generate for you. With a few instructions, it will produce the code where your cursor was placed at the moment you run it.
+`Escafandro` can also try to refactor selected code (without deleting it). This is done by running the same `<leader>cec` while having something selected in visual mode.
+Other feature is producing additional debug help besides the already present `build.log` file. Interpreting C++ compiler error messages is not the most exciting experience of the daily basis, so `Escafandro` also gives some hints when something is wrong, at which file, line and so on.
+
 `Escafandro` is targeted for local LLMs, using `llamacpp` or `ollama` as its engines, so you will have to configure a few things at the installation setup. Otherwise, `AhoiCpp` will just work as usual. 
+If `Escafandro` is active
 
 ### Project structure
 
