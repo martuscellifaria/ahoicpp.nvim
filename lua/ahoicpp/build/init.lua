@@ -53,10 +53,10 @@ function M.compile()
 								and json_data.execution_path ~= ""
 								and json_data.build_path ~= json_data.execution_path
 							then
-								local file = vim.fn.readfile(json_data.build_path .. json_data.project_name, "b")
+								local file = utils.read_bin_file(json_data.build_path .. json_data.project_name)
 								if file then
 									local copy_succeeded =
-										vim.fn.writefile(file, json_data.execution_path .. json_data.project_name, "b")
+										utils.write_bin_file(file, json_data.execution_path .. json_data.project_name)
 									if copy_succeeded == 0 then
 										vim.notify(
 											"C++ app ("
