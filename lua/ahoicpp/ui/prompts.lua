@@ -8,7 +8,31 @@ local M = {}
 
 local function create_prompt_dialog(title, prompt_text, callback, start_insert)
 	local buf = vim.api.nvim_create_buf(false, true)
-	local win = dialogs.create_dialog(title, 60, 1, buf)
+
+	local function calculate_needed_height(text, width)
+		if not text or #text == 0 then
+			return 1
+		end
+		local lines = 1
+		local current_line_length = 0
+
+		for i = 1, #text do
+			local byte = text:sub(i, i)
+			current_line_length = current_line_length + 1
+
+			if byte == "\n" then
+				lines = lines + 1
+				current_line_length = 0
+			elseif current_line_length >= width then
+				lines = lines + 1
+				current_line_length = 0
+			end
+		end
+
+		return lines
+	end
+	local initial_height = calculate_needed_height(prompt_text, 60)
+	local win = dialogs.create_dialog(title, 60, initial_height, buf)
 
 	vim.api.nvim_set_option_value("buftype", "prompt", { buf = buf })
 	vim.fn.prompt_setprompt(buf, prompt_text)
@@ -25,6 +49,21 @@ local function create_prompt_dialog(title, prompt_text, callback, start_insert)
 			end
 		end)
 	end
+
+	vim.api.nvim_create_autocmd("TextChangedI", {
+		buffer = buf,
+		callback = function()
+			local current_line = vim.api.nvim_get_current_line()
+			local total_text = prompt_text .. current_line
+			local needed_height = calculate_needed_height(total_text, 60)
+
+			local current_height = vim.api.nvim_win_get_height(win)
+
+			if needed_height ~= current_height then
+				vim.api.nvim_win_set_height(win, needed_height)
+			end
+		end,
+	})
 
 	vim.fn.prompt_setcallback(buf, function(input)
 		close_and_cleanup()

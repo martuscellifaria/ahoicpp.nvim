@@ -1,5 +1,5 @@
 *ahoicpp.txt*          A.H.O.I. C++ Project Bootstrapper for Neovim
-*ahoicpp*              Version 0.1.0
+*ahoicpp*              Version 0.1.1
 
 
 ==============================================================================
@@ -12,30 +12,35 @@ CONTENTS                                                      *ahoicpp-contents*
   5. Usage ....................................... |ahoicpp-usage|
   6. Commands & Keymaps .......................... |ahoicpp-keymaps|
   7. Project Structure ........................... |ahoicpp-structure|
-  8. Health Check ................................ |ahoicpp-health|
-  9. Development & Testing ....................... |ahoicpp-dev|
- 10. Troubleshooting ............................. |ahoicpp-troubleshooting|
- 11. License ..................................... |ahoicpp-license|
+  8. Escafandro Coding Agent ..................... |ahoicpp-escafandro|
+  9. Health Check ................................ |ahoicpp-health|
+ 10. Development & Testing ....................... |ahoicpp-dev|
+ 11. Troubleshooting ............................. |ahoicpp-troubleshooting|
+ 12. License ..................................... |ahoicpp-license|
 
 
 ==============================================================================
 1. INTRODUCTION                                              *ahoicpp-intro*
 
-AhoiCpp is an opinionated way to start cross-platform C++ projects in Neovim.
+AhoiCpp is a way to start cross-platform C++ projects in Neovim.
 AhoiCpp lets you create classes, libraries, and your own app entrypoint with
 the respective build process.
 
-A.H.O.I. stands for "Alex's Heavily Opinionated Interfaces" - a set of tools
-and conventions for C++ development in Neovim.
+AhoiCpp presents a set of tools and uses a set of
+conventions for rapidly C++ development in Neovim.
 
 Features:
   - Create C++ applications with CMake scaffolding
   - Add modules (static libraries) to your project
+  - Create modules in custom directories
   - Clone external Git dependencies to an externals directory
   - Automatic Git initialization
   - Optional autocompile on project/module creation
+  - Debug/Release build type toggling
+  - Binary execution from within Neovim
   - Cross-platform build script (Python)
   - Version embedding for Windows/Linux
+  - Escafandro AI coding agent (experimental)
 
 
 ==============================================================================
@@ -50,6 +55,9 @@ AhoiCpp requires the following to be installed and available in your PATH:
   - Python 3 (for the build script)
   - clangd (recommended, for LSP support)
 
+For Escafandro features (optional):
+  - Local LLM server (llamacpp or ollama)
+
 
 ==============================================================================
 3. INSTALLATION                                            *ahoicpp-install*
@@ -62,14 +70,22 @@ USING LAZY.NVIM ~
             require('ahoicpp').setup()
         end,
     }
-<
+
+USING LUAROCKS
+
+luarocks install ahoicpp.nvim
+After installation, add to your Neovim configuration:
+
+require('ahoicpp').setup()
 
 MANUAL INSTALLATION ~
 >
     git clone https://github.com/martuscellifaria/ahoicpp.nvim \
         ~/.config/nvim/pack/plugins/start/ahoicpp.nvim
 <
-
+Note: Ensure your Luarocks installation is configured to install
+packages to a location in Neovim's runtime path, or configure
+Neovim to include your Luarocks installation directory.
 
 ==============================================================================
 4. CONFIGURATION                                            *ahoicpp-config*
@@ -80,6 +96,7 @@ DEFAULT CONFIGURATION ~
 >
     {
         autocompile_on_create = true,
+        compile_as_debug = false,
         enable_popups = true,
         git_init = true,
         keymaps = {
@@ -91,7 +108,19 @@ DEFAULT CONFIGURATION ~
             create_module_dir = "<leader>cpd",
             clone_external = "<leader>cpe",
             toggle_autocompile = "<leader>cpt",
+            toggle_debug_compilation = "<leader>cpb",
             compile = "<leader>cpc",
+            execute_app = "<leader>cpx",
+            escafandro_coding = "<leader>cec",
+            escafandro_explain = "<leader>cee",
+            toggle_escafandro_debug_assist = "<leader>cet",
+        },
+        escafandro = {
+            ip = "127.0.0.1:8080",
+            engine = "llamacpp",
+            model = "qwen2.5-coder-7b-instruct-q4_k_m",
+            max_tokens = 500,
+            debug_assist = true,
         },
     }
 <
@@ -100,6 +129,10 @@ CONFIGURATION OPTIONS ~
     *ahoicpp-config-autocompile*
     `autocompile_on_create` (boolean, default: true)
         Automatically compile the project after creating a main app or module.
+
+    *ahoicpp-config-debug*
+    `compile_as_debug` (boolean, default: false)
+        Compile with debug flags by default. Can be toggled at runtime.
 
     *ahoicpp-config-popups*
     `enable_popups` (boolean, default: true)
@@ -112,6 +145,10 @@ CONFIGURATION OPTIONS ~
     *ahoicpp-config-keymaps*
     `keymaps` (table)
         Configure keybindings. Set any key to `false` to disable it.
+
+    *ahoicpp-config-escafandro*
+    `escafandro` (table)
+        Configuration for the Escafandro AI coding agent. See |ahoicpp-escafandro|.
 
 EXAMPLE CUSTOM CONFIGURATION ~
 >
@@ -161,6 +198,17 @@ TOGGLING AUTOCOMPILE ~
     - Press |ahoicpp-toggle_autocompile| (`<leader>cpt` by default)
     - Toggles automatic compilation when creating modules/apps
 
+TOGGLING DEBUG COMPILATION ~
+    - Press |ahoicpp-toggle_debug_compilation| (`<leader>cpb` by default)
+    - Toggles between Debug and Release build types
+
+EXECUTING YOUR APPLICATION ~
+    - Press |ahoicpp-execute_app| (`<leader>cpx` by default)
+    - Runs the compiled binary from within Neovim
+
+USING ESCAFANDRO ~
+    See |ahoicpp-escafandro| for details on the AI coding agent features.
+
 
 ==============================================================================
 6. COMMANDS & KEYMAPS                                      *ahoicpp-keymaps*
@@ -187,17 +235,34 @@ DEFAULT KEYMAPS ~
     *ahoicpp-toggle_autocompile*
     `<leader>cpt`               Toggle autocompile on/off
 
+    *ahoicpp-toggle_debug_compilation*
+    `<leader>cpb`               Toggle debug/release build type
+
     *ahoicpp-compile*
     `<leader>cpc`               Compile the current project
+
+    *ahoicpp-execute_app*
+    `<leader>cpx`               Execute the compiled binary
+
+    *ahoicpp-escafandro_coding*
+    `<leader>cec`               Generate code with Escafandro
+
+    *ahoicpp-escafandro_explain*
+    `<leader>cee`               Get Escafandro to explain selected code
+
+    *ahoicpp-toggle_escafandro_debug_assist*
+    `<leader>cet`               Toggle Escafandro debug assist
 
 LUA API ~
     All functions are available on the main module:
 
-    `require('ahoicpp').create_main_input()`      Prompt for app creation
-    `require('ahoicpp').create_module_input()`    Prompt for module creation
-    `require('ahoicpp').compile_app()`            Compile the project
-    `require('ahoicpp').toggle_autocompile()`     Toggle autocompile setting
-    `require('ahoicpp').create_about_ahoicpp()`   Show about dialog
+    `require('ahoicpp').create_main_input()`         Prompt for app creation
+    `require('ahoicpp').create_module_input()`       Prompt for module creation
+    `require('ahoicpp').compile_app()`               Compile the project
+    `require('ahoicpp').toggle_autocompile()`        Toggle autocompile setting
+    `require('ahoicpp').toggle_debug_compilation()`  Toggle debug/release build
+    `require('ahoicpp').execute_app()`               Execute compiled binary
+    `require('ahoicpp').create_about_ahoicpp()`      Show about dialog
 
 
 ==============================================================================
@@ -213,6 +278,7 @@ After running `create_app`, the following structure is created:
     ├── CMakeLists.txt                # Root CMake configuration
     ├── AhoiCppProject.cmake          # Subdirectory inclusion
     ├── AhoiCppExternals.cmake        # External library configuration
+    ├── ahoicpp_project.json          # Project configuration
     ├── build.py                      # Cross-platform build script
     ├── README.md                     # Project README
     ├── App/
@@ -237,7 +303,53 @@ After running `create_app`, the following structure is created:
 
 
 ==============================================================================
-8. HEALTH CHECK                                            *ahoicpp-health*
+8. ESCAFANDRO CODING AGENT                              *ahoicpp-escafandro*
+
+AhoiCpp includes an experimental AI coding agent called Escafandro, inspired
+by the concept of just-in-time software development without requiring online
+searches.
+
+Escafandro is designed for local LLMs and supports `llamacpp` and `ollama`
+as backend engines.
+
+CODE GENERATION ~
+    - Press |ahoicpp-escafandro_coding| (`<leader>cec` by default)
+    - Describe the C++ code you want Escafandro to generate
+    - The code will be inserted at your cursor position
+
+    When you have text selected in visual mode, the same keymap will ask
+    Escafandro to refactor the selected code instead.
+
+CODE EXPLANATION ~
+    - Select code in visual mode
+    - Press |ahoicpp-escafandro_explain| (`<leader>cee` by default)
+    - Escafandro will analyze and explain the selected code
+
+DEBUG ASSIST ~
+    - Press |ahoicpp-toggle_escafandro_debug_assist| (`<leader>cet` by default)
+    - Toggles automatic debug assistance on compilation errors
+    - When enabled, Escafandro interprets compiler errors and provides hints
+      about which file, line, and what might be wrong
+
+CONFIGURATION ~
+    Escafandro is configured through the `escafandro` table in setup():
+>
+    {
+        escafandro = {
+            ip = "127.0.0.1:8080",
+            engine = "llamacpp",  -- or "ollama"
+            model = "qwen2.5-coder-7b-instruct-q4_k_m",
+            max_tokens = 500,
+            debug_assist = true,
+        },
+    }
+<
+    If Escafandro is not configured or the LLM server is not running, AhoiCpp
+    will function normally without AI features.
+
+
+==============================================================================
+9. HEALTH CHECK                                            *ahoicpp-health*
 
 Run `:checkhealth ahoicpp` to verify your installation.
 
@@ -251,19 +363,20 @@ The health check verifies:
 
 
 ==============================================================================
-9. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
+10. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
 
 AhoiCpp uses Plenary.nvim for testing.
 
-RUNNING TESTS ~
+RUNNING TESTS FROM COMMAND LINE ~
     Navigate to the plugin directory and run:
 >
-    :lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })
+    nvim --headless -c "lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })" -c "qa"
 <
 
-    Or from the command line:
+RUNNING TESTS FROM WITHIN NEOVIM ~
+    Navigate to the plugin directory, open Neovim, and run:
 >
-    nvim --headless -c "lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })" -c "qa"
+    :lua require('plenary.test_harness').test_directory('tests/spec', { minimal_init = 'tests/minimal_init.lua' })
 <
 
 RUNNING A SINGLE TEST FILE ~
@@ -285,7 +398,7 @@ TEST STRUCTURE ~
 
 
 ==============================================================================
-10. TROUBLESHOOTING                                  *ahoicpp-troubleshooting*
+11. TROUBLESHOOTING                                  *ahoicpp-troubleshooting*
 
 | Error                           | Solution                               |
 | ------------------------------- | -------------------------------------- |
@@ -299,7 +412,7 @@ TEST STRUCTURE ~
 
 
 ==============================================================================
-11. LICENSE                                                *ahoicpp-license*
+12. LICENSE                                                *ahoicpp-license*
 
 MIT License
 

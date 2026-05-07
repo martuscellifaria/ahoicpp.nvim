@@ -21,11 +21,7 @@ jobs:
           name: "ahoicpp.nvim"
           summary: "C++ project scaffolding for Neovim"
           detailed_description: |
-            AhoiCpp automates some parts of the heavy lifting of C++
-            and enables a smoother experience without having to leave
-            Neovim to do stuff such as creating new projects, classes,
-            manage external dependencies, compile, run,
-            read and interpret errors and so on.
+            AhoiCpp automates some parts of the heavy lifting of C++ and enables a smoother experience without having to leave Neovim to do stuff such as creating new projects, classes, manage external dependencies, compile, run, read and interpret errors and so on.
           labels: |
             neovim
             c++
