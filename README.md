@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-blue.svg?logo=neovim)](https://neovim.io/)
+[![LuaRocks](https://img.shields.io/luarocks/v/martuscellifaria/ahoicpp.nvim?logo=lua&color=blue)](https://luarocks.org/modules/martuscellifaria/ahoicpp.nvim)
 
 A.H.O.I. Labs (Alex's Heavily Opinionated Interfaces) presents you `AhoiCpp`.
 
