@@ -1,8 +1,9 @@
+local utils = require("ahoicpp.utils")
 local M = {}
 
 M.defaults = {
 	autocompile_on_create = true,
-	compile_as_debug = false,
+	cpp_version = 23,
 	enable_popups = true,
 	git_init = true,
 	keymaps = {
@@ -31,6 +32,7 @@ M.defaults = {
 }
 
 M.options = vim.deepcopy(M.defaults)
+M.cpp_supported_versions = { 11, 14, 17, 20, 23 }
 
 function M.setup(user_config)
 	M.options = vim.tbl_deep_extend("force", M.defaults, user_config or {})
@@ -43,9 +45,24 @@ function M.toggle_autocompile()
 end
 
 function M.toggle_debug_compilation()
-	M.options.compile_as_debug = not M.options.compile_as_debug
-	local build_type = M.options.compile_as_debug and "debug" or "release"
-	vim.notify("Changed compilation to " .. build_type, vim.log.levels.INFO)
+	local project_data
+	local json_data
+	if utils.file_exists("ahoicpp_project.json") then
+		project_data = utils.read_file("ahoicpp_project.json")
+		if project_data and project_data ~= "" then
+			json_data = vim.fn.json_decode(project_data)
+			if json_data and json_data ~= "" then
+				if json_data.build_as == "debug" then
+					json_data.build_as = "release"
+				else
+					json_data.build_as = "debug"
+				end
+			end
+			utils.update_file("ahoicpp_project.json", vim.fn.json_encode(json_data))
+			vim.cmd("silent! edit!")
+			vim.notify("Changed compilation to " .. json_data.build_as, vim.log.levels.INFO)
+		end
+	end
 end
 
 function M.toggle_escafandro_debug_assist()

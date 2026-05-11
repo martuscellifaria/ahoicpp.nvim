@@ -1,9 +1,5 @@
 local M = {}
 
-function M.get_ahoi_template()
-	return [[Ahoi Cap'n!]]
-end
-
 function M.get_header_template()
 	return [[#pragma once
 
@@ -29,8 +25,10 @@ function M.get_cpp_template()
 ]]
 end
 
-function M.get_main_template()
-	return [[#include <print>
+function M.get_main_template(version)
+	if version and version >= 23 then
+		return [[#include <print>
+#include <string>
 #include "version.h"
 
 #ifdef _WIN32
@@ -44,13 +42,37 @@ function M.get_main_template()
 extern const char* embedded_version;
 
 int main() {
-    std::println("AhoiCpp is a tool for setting a C++ 23 environment in Neovim.");
-    std::println("");
-    std::println("C++ is a challenging language, specially for newcomers.");
-    std::println("This is my take on making it easier to hop along.");
-    std::println("");
-    std::println("AhoiCpp can set up classes, cmake files, app entrypoints and");
-    std::println("even creates a python script for building your project.");
+	std::string welcome_to_ahoicpp = "\nAhoiCpp is a tool for setting a C++ development environment in Neovim.\n\
+\nC++ is a challenging language, specially for newcomers.\n\
+This is my take on making it easier to hop along.\n\
+\nAhoiCpp can set up classes, cmake files, app entrypoints and\n\
+even creates a python script for building your project.";
+    std::println("{}", welcome_to_ahoicpp);
+    return 0;
+}
+]]
+	end
+	return [[#include <iostream>
+#include <string>
+#include "version.h"
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/file.h>
+    #include <unistd.h>
+    #include <cerrno>
+#endif
+
+extern const char* embedded_version;
+
+int main() {
+	std::string welcome_to_ahoicpp = "\nAhoiCpp is a tool for setting a C++ development environment in Neovim.\n\
+\nC++ is a challenging language, specially for newcomers.\n\
+This is my take on making it easier to hop along.\n\
+\nAhoiCpp can set up classes, cmake files, app entrypoints and\n\
+even creates a python script for building your project.";
+	std::cout << welcome_to_ahoicpp << '\n';
     return 0;
 }
 ]]
@@ -64,6 +86,16 @@ if(DEFINED VERSION_ARG)
 else()
     set(PROJECT_VERSION "99.99.99") 
 endif()
+if(DEFINED COMPANY_ARG)
+	set(PROJECT_COMPANY ${COMPANY_ARG})
+else()
+	set(PROJECT_COMPANY "Ahoi Labs") 
+endif()
+if(DEFINED DESCRIPTION_ARG)
+	set(PROJECT_DESCRIPTION ${DESCRIPTION_ARG})
+else()
+	set(PROJECT_DESCRIPTION "Your project is owned by Ahoi Labs") 
+endif()
 
 project({{PROJECT_NAME}} VERSION ${PROJECT_VERSION})
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
@@ -71,10 +103,11 @@ set(VER_MAJOR ${PROJECT_VERSION_MAJOR})
 set(VER_MINOR ${PROJECT_VERSION_MINOR})
 set(VER_PATCH ${PROJECT_VERSION_PATCH})
 set(VERSION ${PROJECT_VERSION})
-set(COMPANY "AHOI Labs")
-set(DESCRIPTION "Your project is owned by A.H.O.I Labs")
+set(COMPANY ${PROJECT_COMPANY})
+set(DESCRIPTION ${PROJECT_DESCRIPTION})
 set(PRODUCT ${PROJECT_NAME})
-set(COPYRIGHT "Copyright 2026")
+string(TIMESTAMP COPYRIGHT_YEAR "%Y")
+set(COPYRIGHT "Copyright ${COPYRIGHT_YEAR}")
 
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 string(TIMESTAMP BUILD_DATE "%Y%m%d")
@@ -114,7 +147,7 @@ target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries({{PROJECT_NAME}} ahoicpp_externals)
 target_link_libraries({{PROJECT_NAME}} ahoicpp_externals ${AHOICPP_EXTERNALS_TARGETS})
-target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_23)
+target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 include(AhoiCppSubdirs.cmake)
 
 if(WIN32)
@@ -138,7 +171,7 @@ end
 function M.get_module_cmake_template()
 	return [[add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
 target_link_libraries({{MODULE_NAME}} ahoicpp_externals)
-target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_23)
+target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 target_include_directories({{MODULE_NAME}} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}})
 ]]
 end
@@ -160,13 +193,13 @@ import platform
 import shutil
 
 
-def run_cmake_on_linux(build_type: str, version: str):
+def run_cmake_on_linux(build_type: str, version: str = "99.99.99", company: str = "", description: str = ""):
     if version == "":
         version = "99.99.99"
     build_command = f"""
         mkdir -p build &&
         cd build &&
-        cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
+        cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
         make -j8 > build.log 2>&1
 
@@ -175,18 +208,19 @@ def run_cmake_on_linux(build_type: str, version: str):
         build_command = f"""
         mkdir -p build &&
         cd build &&
-        cmake .. -DCMAKE_BUILD_TYPE={build_type} -G Ninja -D VERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
+        cmake .. -DCMAKE_BUILD_TYPE={build_type} -G Ninja -D VERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
         ninja > build.log 2>&1
         """
-    
+
     status = os.system(build_command)
     if status != 0:
         exit_code = os.waitstatus_to_exitcode(status)
         sys.exit(exit_code)
     sys.exit(0)
 
-def run_cmake_on_windows(build_type: str, version: str):
+
+def run_cmake_on_windows(build_type: str, version: str = "99.99.99", company: str = "", description: str = ""):
     if version == "":
         version = "99.99.99"
 
@@ -194,14 +228,14 @@ def run_cmake_on_windows(build_type: str, version: str):
     if not exist build mkdir build;
     """
     os.system(pre_build_command)
-    
+
     build_command = f"""
         cd build && cmake .. -D VERSION_ARG="{version}"
         """
 
     if shutil.which("ninja") is not None:
         build_command = f"""
-        cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -DVERSION_ARG="{version}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
+        cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -DVERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
         """
     else:
         print("Ninja not found. Will produce Visual Studio Solution. Please open in Visual Studio or compile it with MSBuild")
@@ -214,15 +248,16 @@ def run_cmake_on_windows(build_type: str, version: str):
 
     sys.exit(0)
 
-def run_app(build_type: str, version: str):
+
+def run_app(build_type: str, version: str = "", company: str = "", description: str = ""):
     operating_system = platform.system()
     match operating_system:
         case "Linux":
             print("Linux detected, let us run the build.")
-            run_cmake_on_linux(build_type, version)
+            run_cmake_on_linux(build_type, version, company, description)
         case "Windows":
             print("Windows detected, let us generate a Visual Studio Solution file.")
-            run_cmake_on_windows(build_type, version)
+            run_cmake_on_windows(build_type, version, company, description)
 
 
 if __name__ == '__main__':
@@ -245,10 +280,18 @@ if __name__ == '__main__':
                 run_app("RelWithDebInfo", "")
             case _:
                 print("Invalid input. Bye.")
-    elif (sys.argv[1] == "deb"):
-        run_app("RelWithDebInfo", "")
+    elif (sys.argv[1] == "debug"):
+        version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
+        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        description = sys.argv[4] if len(
+            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+        run_app("RelWithDebInfo", version, company, description)
     else:
-        run_app("Release", "")
+        version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
+        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        description = sys.argv[4] if len(
+            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+        run_app("Release", version, company, description)
 ]]
 end
 
@@ -380,7 +423,11 @@ function M.get_project_json_template()
 	return [[{
 	"project_name": "{{PROJECT_NAME}}",
 	"build_path": ".{{SEP}}build{{SEP}}App{{SEP}}",
-	"execution_path": ".{{SEP}}build{{SEP}}App{{SEP}}"
+	"execution_path": ".{{SEP}}build{{SEP}}App{{SEP}}",
+	"build_as": "release",
+	"version": "99.99.99",
+	"company": "Ahoi Labs",
+	"description": "Your project is owned by Ahoi Labs"
 }]]
 end
 

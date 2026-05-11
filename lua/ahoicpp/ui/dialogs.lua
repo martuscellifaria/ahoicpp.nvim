@@ -103,7 +103,7 @@ end
 function M.create_about()
 	local lines = {
 		"",
-		"AhoiCpp is a tool for setting a C++ 23 environment in Neovim.",
+		"AhoiCpp is a tool for setting a C++ development environment in Neovim.",
 		"",
 		"C++ is a challenging language, specially for newcomers.",
 		"This is my take on making it easier to hop along.",

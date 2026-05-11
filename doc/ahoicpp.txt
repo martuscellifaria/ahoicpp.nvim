@@ -49,7 +49,7 @@ Features:
 AhoiCpp requires the following to be installed and available in your PATH:
 
   - Neovim 0.11 or higher
-  - C++23 capable compiler (g++ 14+ recommended)
+  - C++ compiler (g++ 14+ recommended)
   - CMake 3.28 or higher
   - Git (optional, for repository initialization and external cloning)
   - Python 3 (for the build script)
@@ -96,7 +96,6 @@ DEFAULT CONFIGURATION ~
 >
     {
         autocompile_on_create = true,
-        compile_as_debug = false,
         enable_popups = true,
         git_init = true,
         keymaps = {
@@ -129,10 +128,6 @@ CONFIGURATION OPTIONS ~
     *ahoicpp-config-autocompile*
     `autocompile_on_create` (boolean, default: true)
         Automatically compile the project after creating a main app or module.
-
-    *ahoicpp-config-debug*
-    `compile_as_debug` (boolean, default: false)
-        Compile with debug flags by default. Can be toggled at runtime.
 
     *ahoicpp-config-popups*
     `enable_popups` (boolean, default: true)
@@ -272,9 +267,8 @@ After running `create_app`, the following structure is created:
 
 >
     YourApp/
-    ├── .ahoicpp                      # Project marker file
-    ├── .gitignore                    # Git ignore patterns
     ├── .git/                         # Git repository (if enabled)
+    ├── .gitignore                    # Git ignore patterns
     ├── CMakeLists.txt                # Root CMake configuration
     ├── AhoiCppProject.cmake          # Subdirectory inclusion
     ├── AhoiCppExternals.cmake        # External library configuration

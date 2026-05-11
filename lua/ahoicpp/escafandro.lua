@@ -17,12 +17,17 @@ function M.insert_code(prompt)
 	local cursor = vim.api.nvim_win_get_cursor(0)
 	local row = cursor[1]
 
+	local cpp_version = config.options.cpp_version
+	if not vim.list_contains(config.cpp_supported_versions, cpp_version) then
+		vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
+		cpp_version = 23
+	end
 	local system_prompt = [[You are a C++ code assistant. You MUST follow these rules EXACTLY:
 
 STYLE RULES (CRITICAL - Violate these and the code will be rejected):
 1. ALL functions and variables MUST use snake_case (e.g., split_string, input_file)
 2. ALL classes and structs MUST use PascalCase (e.g., StringParser)
-3. Use C++23 features when possible
+3. Use C++{{CPP_VERSION}} features when possible
 4. NEVER write #include statements as actual code - if headers are needed, write them as comments on separate lines like this:
    // #include <string>
    // #include <vector>
@@ -36,6 +41,7 @@ OUTPUT RULES:
 
 Remember: snake_case for functions/variables, #include as comment (using // at the beginning), member variable names must end with _. These rules are NON-NEGOTIABLE.]]
 
+	system_prompt = system_prompt:gsub("{{CPP_VERSION}}", cpp_version)
 	local user_prompt = string.format("Write code for the following task:\n\n%s", prompt)
 
 	local full_prompt = string.format(

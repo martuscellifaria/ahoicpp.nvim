@@ -42,11 +42,6 @@ describe("ahoicpp.templates", function()
 		assert.matches("{{MODULE_NAME}}", tmpl)
 	end)
 
-	it("get_ahoi_template returns marker", function()
-		local tmpl = templates.get_ahoi_template()
-		assert.matches("Ahoi", tmpl)
-	end)
-
 	it("get_gitignore includes common patterns", function()
 		local tmpl = templates.get_gitignore()
 		assert.matches("build/", tmpl)

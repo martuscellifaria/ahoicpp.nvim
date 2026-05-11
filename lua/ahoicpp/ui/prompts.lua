@@ -96,7 +96,7 @@ function M.create_main_input()
 		end)
 	end
 
-	if utils.file_exists("." .. sep .. ".ahoicpp") then
+	if utils.file_exists("." .. sep .. "ahoicpp_project.json") then
 		if utils.dir_exists("." .. sep .. "App") then
 			vim.notify(
 				"You appear to have a main app already. Please check your project structure.",
@@ -126,7 +126,7 @@ end
 
 function M.create_module_input()
 	local sep = package.config:sub(1, 1)
-	if not utils.file_exists("." .. sep .. ".ahoicpp") then
+	if not utils.file_exists("." .. sep .. "ahoicpp_project.json") then
 		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
 		return
 	end
@@ -150,19 +150,25 @@ function M.clone_external()
 
 		local repo_name = get_repo_name(input)
 		if not repo_name then
-			vim.notify("Could not parse repository name from URL.", vim.log.levels.ERROR)
+			vim.notify("Could not parse repository name from URL: " .. input, vim.log.levels.ERROR)
 			return
 		end
 
 		if not header_only then
 			local cmake_path = "./AhoiCppExternals.cmake"
+			local cpp_version = config.options.cpp_version
+			if not vim.list_contains(config.cpp_supported_versions, cpp_version) then
+				vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
+				cpp_version = 23
+			end
 			local text_to_append =
 				[[file(GLOB {{REPO_NAME}}_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/src/*.cpp")
 add_library({{REPO_NAME}} STATIC ${{{REPO_NAME}}_SOURCES})
-target_compile_features({{REPO_NAME}} PUBLIC cxx_std_23)
+target_compile_features({{REPO_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 target_include_directories({{REPO_NAME}} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/externals/{{REPO_NAME}}/src")
 list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
+			text_to_append = text_to_append:gsub("{{CPP_VERSION}}", cpp_version)
 			text_to_append = text_to_append:gsub("{{REPO_NAME}}", repo_name)
 			utils.append_file(cmake_path, text_to_append .. "\n")
 		end
@@ -200,7 +206,7 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 		end)
 	end
 	local sep = package.config:sub(1, 1)
-	if not utils.file_exists("." .. sep .. ".ahoicpp") then
+	if not utils.file_exists("." .. sep .. "ahoicpp_project.json") then
 		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
 		return
 	end
@@ -230,7 +236,7 @@ end
 
 function M.create_module_directory_input()
 	local sep = package.config:sub(1, 1)
-	if not utils.file_exists("." .. sep .. ".ahoicpp") then
+	if not utils.file_exists("." .. sep .. "ahoicpp_project.json") then
 		vim.notify("AhoiCpp is not initialized. Please create an app first.", vim.log.levels.WARN)
 		return
 	end

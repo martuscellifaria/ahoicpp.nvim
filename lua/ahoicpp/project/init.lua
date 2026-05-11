@@ -38,15 +38,19 @@ function M.create_main(main_name)
 	project_json_template = project_json_template:gsub("{{SEP}}", sep)
 	fs.write_file("." .. sep .. "ahoicpp_project.json", project_json_template)
 
+	local cpp_version = config.options.cpp_version
+	if not vim.list_contains(config.cpp_supported_versions, cpp_version) then
+		vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
+		cpp_version = 23
+	end
 	local main_path = app_path .. sep .. main_name .. ".cpp"
-	fs.write_file(main_path, templates.get_main_template())
+	fs.write_file(main_path, templates.get_main_template(cpp_version))
 	vim.cmd("edit " .. main_path)
 
 	fs.write_file("." .. sep .. "App" .. sep .. "version.c.in", templates.get_version_c_in())
 	fs.write_file("." .. sep .. "App" .. sep .. "version.h.in", templates.get_version_h_in())
 	fs.write_file("." .. sep .. "App" .. sep .. "version.rc.in", templates.get_version_rc_in())
 
-	fs.write_file("." .. sep .. ".ahoicpp", templates.get_ahoi_template())
 	fs.write_file("." .. sep .. ".gitignore", templates.get_gitignore())
 	fs.write_file(
 		"." .. sep .. "AhoiCppProject.cmake",
@@ -65,6 +69,7 @@ function M.create_main(main_name)
 
 	cmake_template = templates.get_app_cmake_template()
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	fs.write_file("." .. sep .. "App" .. sep .. "CMakeLists.txt", cmake_template)
 
 	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
@@ -124,8 +129,14 @@ function M.create_module(module_name, parent_directory_name)
 	fs.append_file(cmake_path, "add_subdirectory(" .. module_name .. ")\n")
 
 	cmake_path = "." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "CMakeLists.txt"
+	local cpp_version = config.options.cpp_version
+	if not vim.list_contains(config.cpp_supported_versions, cpp_version) then
+		vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
+		cpp_version = 23
+	end
 	local cmake_template = templates.get_module_cmake_template()
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	fs.write_file(cmake_path, cmake_template)
 
 	local header_path = "."
