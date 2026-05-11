@@ -44,8 +44,7 @@ function M.get_main_template()
 extern const char* embedded_version;
 
 int main() {
-    std::println("AhoiCpp is an A.H.O.I. (Alex's Heavily Opinionated Interfaces)");
-    std::println("tool for setting a C++ 23 environment in Neovim.");
+    std::println("AhoiCpp is a tool for setting a C++ 23 environment in Neovim.");
     std::println("");
     std::println("C++ is a challenging language, specially for newcomers.");
     std::println("This is my take on making it easier to hop along.");
@@ -228,7 +227,7 @@ def run_app(build_type: str, version: str):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Welcome to A.H.O.I. (Alex's Heavily Opinionated Interfaces) C++ build process. Pick your build or just press enter to go fast.")
+        print("Welcome to AhoiCpp build process. Pick your build or just press enter to go fast.")
         print("[Enter]  FastBuild")
         print("[0]      Release")
         print("[1]      Debug")
@@ -238,7 +237,7 @@ if __name__ == '__main__':
             case "":
                 run_app("Release", "")
             case "0":
-                print("You selected Release. Please add a version to your build. Format recommended: XX.XX.XX.XX. Hint: you can just press enter and leave it empty.")
+                print("You selected Release. Please add a version to your build. Format recommended: XX.XX.XX. Hint: you can just press enter and leave it empty.")
                 version = input()
                 run_app("Release", version)
             case "1":

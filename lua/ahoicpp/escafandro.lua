@@ -139,7 +139,7 @@ Remember: snake_case for functions/variables, #include as comment (using // at t
 				local response = table.concat(full_response)
 				M.escafandro_requested = false
 				if response == "" then
-					vim.notify("Empty response from server", vim.log.levels.ERROR)
+					vim.notify("Empty response from Escafandro server. Is it running?", vim.log.levels.ERROR)
 					return
 				end
 
@@ -263,6 +263,7 @@ function M.request_explanation(full_prompt, callback)
 				local response = table.concat(data)
 				local ok, decoded = pcall(vim.fn.json_decode, response)
 				if not ok or not decoded.content then
+					vim.notify("Empty response from Escafandro server. Is it running?", vim.log.levels.ERROR)
 					return
 				end
 

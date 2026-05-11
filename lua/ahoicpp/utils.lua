@@ -49,6 +49,21 @@ function M.read_file(path)
 	return data
 end
 
+function M.read_bin_file(path)
+	if path:sub(1, 1) == "~" then
+		path = vim.fn.expand(path)
+	end
+	local file = vim.fn.readfile(path, "b")
+	return file
+end
+
+function M.write_bin_file(bin, path)
+	if path:sub(1, 1) == "~" then
+		path = vim.fn.expand(path)
+	end
+	vim.fn.writefile(bin, path, "b")
+end
+
 function M.append_file(path, content)
 	local fd = vim.uv.fs_open(path, "a", 420)
 	if not fd then
