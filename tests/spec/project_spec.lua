@@ -57,9 +57,6 @@ describe("ahoicpp.project", function()
 			get_version_rc_in = function()
 				return ""
 			end,
-			get_ahoi_template = function()
-				return ""
-			end,
 			get_gitignore = function()
 				return ""
 			end,

@@ -20,9 +20,29 @@ function M.compile()
 		return
 	end
 
-	local compile_as = "rel"
-	if config.options.compile_as_debug then
-		compile_as = "deb"
+	local build_as = "release"
+	local project_data
+	local json_data
+	local version = "99.99.99"
+	local company = "Ahoi Labs"
+	local descripton = "Your project is owned by Ahoi Labs."
+	if utils.file_exists("ahoicpp_project.json") then
+		project_data = utils.read_file("ahoicpp_project.json")
+		if project_data and project_data ~= "" then
+			json_data = vim.fn.json_decode(project_data)
+			if json_data.build_as and json_data.build_as ~= "" then
+				build_as = json_data.build_as
+			end
+			if json_data.version and json_data.version ~= "" then
+				version = json_data.version
+			end
+			if json_data.company and json_data.company ~= "" then
+				company = json_data.company
+			end
+			if json_data.description and json_data.description ~= "" then
+				descripton = json_data.description
+			end
+		end
 	end
 
 	if not utils.file_exists("build.py") then
@@ -32,40 +52,29 @@ function M.compile()
 
 	vim.notify("Starting compilation.", vim.log.levels.INFO)
 	compiling = true
-	vim.system({ python, "build.py", compile_as }, { text = true }, function(obj)
+	vim.system({ python, "build.py", build_as, version, company, descripton }, { text = true }, function(obj)
 		vim.schedule(function()
 			if obj.code == 0 then
 				compiling = false
-				vim.notify("C++ app (" .. compile_as .. ") compilation finished.", vim.log.levels.INFO)
-				if utils.file_exists("ahoicpp_project.json") then
-					local project_data = utils.read_file("ahoicpp_project.json")
-					if project_data and project_data ~= "" then
-						local json_data = vim.fn.json_decode(project_data)
-						if
-							json_data
-							and json_data.project_name
-							and json_data.build_path
-							and json_data.execution_path
-						then
-							if
-								json_data.project_name ~= ""
-								and json_data.build_path ~= ""
-								and json_data.execution_path ~= ""
-								and json_data.build_path ~= json_data.execution_path
-							then
-								local file = utils.read_bin_file(json_data.build_path .. json_data.project_name)
-								if file then
-									local copy_succeeded =
-										utils.write_bin_file(file, json_data.execution_path .. json_data.project_name)
-									if copy_succeeded == 0 then
-										vim.notify(
-											"C++ app ("
-												.. compile_as
-												.. ") compilation finished and copied to the execution path.",
-											vim.log.levels.INFO
-										)
-									end
-								end
+				vim.notify("C++ app (" .. build_as .. ") compilation finished.", vim.log.levels.INFO)
+				if json_data and json_data.project_name and json_data.build_path and json_data.execution_path then
+					if
+						json_data.project_name ~= ""
+						and json_data.build_path ~= ""
+						and json_data.execution_path ~= ""
+						and json_data.build_path ~= json_data.execution_path
+					then
+						local file = utils.read_bin_file(json_data.build_path .. json_data.project_name)
+						if file then
+							local copy_succeeded =
+								utils.write_bin_file(file, json_data.execution_path .. json_data.project_name)
+							if copy_succeeded == 0 then
+								vim.notify(
+									"C++ app ("
+										.. build_as
+										.. ") compilation finished and copied to the execution path.",
+									vim.log.levels.INFO
+								)
 							end
 						end
 					end

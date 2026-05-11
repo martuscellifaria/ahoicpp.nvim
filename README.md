@@ -11,7 +11,7 @@ AhoiCpp lets you create classes, libraries and your own app entrypoint with the 
 
 ## Dependencies
 
-AhoiCpp assumes you have a C++ 23 capable compiler (I use g++ 14.3.0 on my development environment), `cmake`, `git` and `python` installed. If not, you should do it first.
+AhoiCpp assumes you have a C++ compiler (I use g++ 14.3.0 on my development environment), `cmake`, `git` and `python` installed. If not, you should do it first.
 Of course you have to have `Neovim` as well, version `0.11` or higher is recommended, since some `vim.api` and `vim.fn` functions are new.
 
 &nbsp;
@@ -79,7 +79,7 @@ AhoiCpp provides a configurable interface. An example follows:
 ```lua
 {
 	autocompile_on_create = true,
-	compile_as_debug = false,
+	cpp_version = 23,
 	enable_popups = true,
 	git_init = true,
 	keymaps = {
@@ -135,9 +135,8 @@ After running `<leader>cpa YourApp`:
 
 ```
 YourApp/
-├── .ahoicpp
-├── .gitignore
 ├── .git/
+├── .gitignore
 ├── AhoiCppExternals.cmake
 ├── AhoiCppProject.cmake
 ├── ahoicpp_project.json
