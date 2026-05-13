@@ -173,15 +173,15 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 			utils.append_file(cmake_path, text_to_append .. "\n")
 		end
 
-		vim.notify("Starting to clone " .. repo_name .. " from " .. input, vim.log.levels.INFO)
-		vim.system({ "git", "clone", input, "externals/" .. repo_name }, {}, function(obj)
+		vim.notify("Starting to fetch submodule " .. repo_name .. " from " .. input, vim.log.levels.INFO)
+		vim.system({ "git", "submodule", "add", input, "externals/" .. repo_name }, {}, function(obj)
 			vim.schedule(function()
 				if obj.code == 0 then
 					vim.notify("Successfully cloned " .. repo_name, vim.log.levels.INFO)
 					if config.options.enable_popups then
 						local message_lines = {
 							"",
-							repo_name .. " was successfully cloned from " .. input .. ".",
+							repo_name .. " was successfully added as submodule from " .. input .. ".",
 							"In order to make it available to your classes, you may have to",
 							"add other paths to ./AhoiCppExternals.cmake. ",
 							"There is also the ./externals/README.md as a resource.",
@@ -198,7 +198,7 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 					end
 				else
 					vim.notify(
-						"Failed to clone repository. Check your command, repository, or if you already have it cloned.",
+						"Failed to fetch from repository. Check your command, repository, or if you already have it added.",
 						vim.log.levels.ERROR
 					)
 				end
@@ -211,7 +211,7 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 		return
 	end
 
-	create_prompt_dialog("AhoiCpp Clone External from Git", "git clone ", function(input)
+	create_prompt_dialog("AhoiCpp Add External Submodule from Git", "git submodule add ", function(input)
 		if not input or input == "" then
 			vim.notify("Invalid input provided.", vim.log.levels.WARN)
 			return

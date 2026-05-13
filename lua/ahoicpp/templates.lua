@@ -375,9 +375,6 @@ function M.get_gitignore()
 	return [[build/
 compile_commands.json
 
-externals/*
-!externals/README.md
-
 .vscode/
 .idea/
 *.swp
