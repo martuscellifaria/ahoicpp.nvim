@@ -28,10 +28,18 @@ function M.create_main(main_name)
 	local app_path = "." .. sep .. "App" .. sep .. "src"
 	fs.create_dir(app_path)
 	fs.create_dir("." .. sep .. "externals")
+	fs.create_dir("." .. sep .. ".fetchers")
 	fs.write_file("." .. sep .. "externals" .. sep .. "README.md", templates.get_externals_readme())
 	local readme_template = templates.get_readme_template()
 	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
+
+	local fetcher_template = templates.get_libpqxx_fetcher()
+	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_opencv_fetcher()
+	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
 
 	local project_json_template = templates.get_project_json_template()
 	project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)

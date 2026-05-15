@@ -22,6 +22,7 @@ M.create_module_directory_input = ui.prompts.create_module_directory_input
 M.compile_app = build.compile
 M.execute_app = build.execute_compiled_binary
 M.clone_external_from_git = ui.prompts.clone_external
+M.fetch_external = ui.prompts.fetch_external_dependency
 M.toggle_autocompile = config.toggle_autocompile
 M.toggle_debug_compilation = config.toggle_debug_compilation
 M.toggle_escafandro_debug_assist = config.toggle_escafandro_debug_assist

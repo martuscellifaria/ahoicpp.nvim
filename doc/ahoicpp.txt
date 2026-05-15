@@ -1,5 +1,5 @@
 *ahoicpp.txt*          A.H.O.I. C++ Project Bootstrapper for Neovim
-*ahoicpp*              Version 0.1.1
+*ahoicpp*              Version 0.2.0
 
 
 ==============================================================================
@@ -34,6 +34,7 @@ Features:
   - Add modules (static libraries) to your project
   - Create modules in custom directories
   - Clone external Git dependencies to an externals directory
+  - Fetch complex external dependencies with custom scripts
   - Automatic Git initialization
   - Optional autocompile on project/module creation
   - Debug/Release build type toggling
@@ -48,12 +49,12 @@ Features:
 
 AhoiCpp requires the following to be installed and available in your PATH:
 
-  - Neovim 0.11 or higher
-  - C++ compiler (g++ 14+ recommended)
-  - CMake 3.28 or higher
+  - Neovim 0.11 or higher (recommended, some vim.api and vim.fn functions
+    require this version)
+  - C++ compiler (g++ 14.3.0 recommended on development environment)
+  - CMake
   - Git (optional, for repository initialization and external cloning)
   - Python 3 (for the build script)
-  - clangd (recommended, for LSP support)
 
 For Escafandro features (optional):
   - Local LLM server (llamacpp or ollama)
@@ -71,21 +72,23 @@ USING LAZY.NVIM ~
         end,
     }
 
-USING LUAROCKS
-
-luarocks install ahoicpp.nvim
+USING LUAROCKS ~
+>
+    luarocks install ahoicpp.nvim
+<
 After installation, add to your Neovim configuration:
-
-require('ahoicpp').setup()
+>
+    require('ahoicpp').setup()
+<
+Note: Ensure your Luarocks installation is configured to install
+packages to a location in Neovim's runtime path, or configure
+Neovim to include your Luarocks installation directory.
 
 MANUAL INSTALLATION ~
 >
     git clone https://github.com/martuscellifaria/ahoicpp.nvim \
         ~/.config/nvim/pack/plugins/start/ahoicpp.nvim
 <
-Note: Ensure your Luarocks installation is configured to install
-packages to a location in Neovim's runtime path, or configure
-Neovim to include your Luarocks installation directory.
 
 ==============================================================================
 4. CONFIGURATION                                            *ahoicpp-config*
@@ -96,6 +99,7 @@ DEFAULT CONFIGURATION ~
 >
     {
         autocompile_on_create = true,
+        cpp_version = 23,
         enable_popups = true,
         git_init = true,
         keymaps = {
@@ -106,6 +110,7 @@ DEFAULT CONFIGURATION ~
             create_module = "<leader>cpm",
             create_module_dir = "<leader>cpd",
             clone_external = "<leader>cpe",
+            fetch_external = "<leader>cpf",
             toggle_autocompile = "<leader>cpt",
             toggle_debug_compilation = "<leader>cpb",
             compile = "<leader>cpc",
@@ -129,6 +134,10 @@ CONFIGURATION OPTIONS ~
     `autocompile_on_create` (boolean, default: true)
         Automatically compile the project after creating a main app or module.
 
+    *ahoicpp-config-cpp-version*
+    `cpp_version` (integer, default: 23)
+        C++ standard version to use for the project (e.g., 17, 20, 23).
+
     *ahoicpp-config-popups*
     `enable_popups` (boolean, default: true)
         Show popup dialogs for success/confirmation messages.
@@ -149,10 +158,8 @@ EXAMPLE CUSTOM CONFIGURATION ~
 >
     require('ahoicpp').setup({
         autocompile_on_create = false,
-        git_init = false,
         keymaps = {
             compile = "<leader>cc",
-            create_app = "<leader>ca",
         }
     })
 <
@@ -179,10 +186,24 @@ ADDING A MODULE TO A CUSTOM DIRECTORY ~
     3. Enter the module name
     4. The module is created in your custom directory
 
-CLONING EXTERNAL DEPENDENCIES ~
-    1. Press |ahoicpp-clone_external| (`<leader>cpe` by default)
-    2. Paste a Git repository URL
-    3. The repository is cloned to the `externals/` directory
+FETCHING EXTERNAL DEPENDENCIES ~
+    You have a few options to fetch external dependencies with AhoiCpp.
+
+    SIMPLE GIT CLONE:
+    - Press |ahoicpp-clone_external| (`<leader>cpe` by default)
+    - Paste a Git repository URL
+    - The repository is cloned to the `externals/` directory
+    - Best for header-only libraries or simple dependencies
+
+    COMPLEX DEPENDENCIES WITH SCRIPTS:
+    - Press |ahoicpp-fetch_external| (`<leader>cpf` by default)
+    - This runs a background script to fetch more complex dependencies
+    - For libraries like `opencv` or `postgresql`, create a Python script
+      based on the templates in the `.fetchers` directory
+    - Fetcher scripts can compile and make libraries available globally
+      for the project
+    - AhoiCpp will not install anything on your system, keeping all
+      dependencies inside the project itself
 
 COMPILING YOUR PROJECT ~
     - Press |ahoicpp-compile| (`<leader>cpc` by default)
@@ -192,6 +213,7 @@ COMPILING YOUR PROJECT ~
 TOGGLING AUTOCOMPILE ~
     - Press |ahoicpp-toggle_autocompile| (`<leader>cpt` by default)
     - Toggles automatic compilation when creating modules/apps
+    - Enabled by default
 
 TOGGLING DEBUG COMPILATION ~
     - Press |ahoicpp-toggle_debug_compilation| (`<leader>cpb` by default)
@@ -213,28 +235,37 @@ Lua functions and keymaps.
 
 DEFAULT KEYMAPS ~
     *ahoicpp-help*
-    `<leader>cph`               Open the about/help dialog
+    `<leader>cph`               Open the about/help dialog from AhoiCpp
 
     *ahoicpp-create_app*
-    `<leader>cpa`               Create a new C++ application
+    `<leader>cpa`               Create a new C++ application with respective
+                                CMake files and scripts
 
     *ahoicpp-create_module*
-    `<leader>cpm`               Create a module in the Modules/ directory
+    `<leader>cpm`               Create C++ class within Modules directory and
+                                add CMake files
 
     *ahoicpp-create_module_dir*
-    `<leader>cpd`               Create a module in a custom directory
-
-    *ahoicpp-clone_external*
-    `<leader>cpe`               Clone an external Git repository
-
-    *ahoicpp-toggle_autocompile*
-    `<leader>cpt`               Toggle autocompile on/off
-
-    *ahoicpp-toggle_debug_compilation*
-    `<leader>cpb`               Toggle debug/release build type
+    `<leader>cpd`               Create C++ class within custom named directory
+                                and add CMake files
 
     *ahoicpp-compile*
-    `<leader>cpc`               Compile the current project
+    `<leader>cpc`               Compile the current C++ project
+
+    *ahoicpp-clone_external*
+    `<leader>cpe`               Clone external Git repository to the externals
+                                directory of the C++ project
+
+    *ahoicpp-fetch_external*
+    `<leader>cpf`               Fetch more complex external dependencies by
+                                running a script in background
+
+    *ahoicpp-toggle_autocompile*
+    `<leader>cpt`               Toggle autocompilation at module and/or app
+                                creation (enabled by default)
+
+    *ahoicpp-toggle_debug_compilation*
+    `<leader>cpb`               Toggle build type (release/debug)
 
     *ahoicpp-execute_app*
     `<leader>cpx`               Execute the compiled binary
@@ -243,10 +274,10 @@ DEFAULT KEYMAPS ~
     `<leader>cec`               Generate code with Escafandro
 
     *ahoicpp-escafandro_explain*
-    `<leader>cee`               Get Escafandro to explain selected code
+    `<leader>cee`               Get Escafandro to explain the code selected
 
     *ahoicpp-toggle_escafandro_debug_assist*
-    `<leader>cet`               Toggle Escafandro debug assist
+    `<leader>cet`               Toggle Escafandro debug assist functionality
 
 LUA API ~
     All functions are available on the main module:
@@ -267,6 +298,7 @@ After running `create_app`, the following structure is created:
 
 >
     YourApp/
+    ├── .fetchers/                    # Scripts for fetching dependencies
     ├── .git/                         # Git repository (if enabled)
     ├── .gitignore                    # Git ignore patterns
     ├── CMakeLists.txt                # Root CMake configuration
@@ -299,9 +331,9 @@ After running `create_app`, the following structure is created:
 ==============================================================================
 8. ESCAFANDRO CODING AGENT                              *ahoicpp-escafandro*
 
-AhoiCpp includes an experimental AI coding agent called Escafandro, inspired
-by the concept of just-in-time software development without requiring online
-searches.
+AhoiCpp includes an experimental AI coding agent called Escafandro, based on
+TJ DeVries' presentation at Omacon 2026 and the idea of just-in-time software
+development without requiring online searches.
 
 Escafandro is designed for local LLMs and supports `llamacpp` and `ollama`
 as backend engines.
@@ -309,10 +341,11 @@ as backend engines.
 CODE GENERATION ~
     - Press |ahoicpp-escafandro_coding| (`<leader>cec` by default)
     - Describe the C++ code you want Escafandro to generate
-    - The code will be inserted at your cursor position
+    - With a few instructions, it will produce the code where your cursor
+      was placed at the moment you run it
 
     When you have text selected in visual mode, the same keymap will ask
-    Escafandro to refactor the selected code instead.
+    Escafandro to refactor the selected code (without deleting it).
 
 CODE EXPLANATION ~
     - Select code in visual mode
@@ -322,8 +355,10 @@ CODE EXPLANATION ~
 DEBUG ASSIST ~
     - Press |ahoicpp-toggle_escafandro_debug_assist| (`<leader>cet` by default)
     - Toggles automatic debug assistance on compilation errors
-    - When enabled, Escafandro interprets compiler errors and provides hints
-      about which file, line, and what might be wrong
+    - When enabled and a compilation error occurs, Escafandro interprets the
+      error messages and provides additional hints beyond the `build.log` file
+    - It will indicate which file, line, and what might be wrong, making
+      C++ compiler error interpretation less frustrating
 
 CONFIGURATION ~
     Escafandro is configured through the `escafandro` table in setup():
@@ -360,6 +395,9 @@ The health check verifies:
 10. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
 
 AhoiCpp uses Plenary.nvim for testing.
+
+PREREQUISITES ~
+    Ensure Plenary.nvim is installed before running tests.
 
 RUNNING TESTS FROM COMMAND LINE ~
     Navigate to the plugin directory and run:
@@ -398,7 +436,7 @@ TEST STRUCTURE ~
 | ------------------------------- | -------------------------------------- |
 | "AhoiCpp is not initialized"    | Run |ahoicpp-create_app| first           |
 | "Python not found"              | Install Python and ensure it's in PATH |
-| "CMake not found"               | Install CMake 3.28+                    |
+| "CMake not found"               | Install CMake                          |
 | "build.py not found"            | Ensure you're in project root          |
 | Compilation fails               | Check `build/build.log` for details    |
 | "Failed to start repository"    | Install Git or set `git_init = false`  |
@@ -410,9 +448,7 @@ TEST STRUCTURE ~
 
 MIT License
 
-Copyright (c) 2026 Alexandre Martuscelli Faria
-
-See the LICENSE file in the repository for full license text.
+See LICENSE file in the repository for full license text.
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:
