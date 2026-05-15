@@ -234,6 +234,111 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 	end)
 end
 
+function M.fetch_external_dependency()
+	local fetcher_scripts = utils.get_fetcher_scripts()
+	if #fetcher_scripts == 0 then
+		vim.notify("No fetcher scripts found.", vim.log.levels.WARN)
+		return
+	end
+
+	local selected_index = 1
+	local width = 40
+	local height = math.min(10, #fetcher_scripts + 2)
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, fetcher_scripts)
+	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+
+	local win = dialogs.create_dialog("AhoiCpp Select Fetcher Script", width, height, buf)
+
+	vim.api.nvim_set_option_value("cursorline", true, { win = win })
+
+	vim.api.nvim_win_set_cursor(win, { selected_index, 0 })
+
+	local function close_window()
+		if vim.api.nvim_win_is_valid(win) then
+			vim.api.nvim_win_close(win, true)
+		end
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+	end
+
+	vim.keymap.set("n", "<Up>", function()
+		selected_index = math.max(1, selected_index - 1)
+		vim.api.nvim_win_set_cursor(win, { selected_index, 0 })
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "<Down>", function()
+		selected_index = math.min(#fetcher_scripts, selected_index + 1)
+		vim.api.nvim_win_set_cursor(win, { selected_index, 0 })
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "k", function()
+		selected_index = math.max(1, selected_index - 1)
+		vim.api.nvim_win_set_cursor(win, { selected_index, 0 })
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "j", function()
+		selected_index = math.min(#fetcher_scripts, selected_index + 1)
+		vim.api.nvim_win_set_cursor(win, { selected_index, 0 })
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "<CR>", function()
+		if selected_index <= #fetcher_scripts then
+			local selected_fetcher = fetcher_scripts[selected_index]
+			close_window()
+			vim.notify("Selected fetcher: " .. selected_fetcher)
+			local python = ""
+			if vim.fn.executable("python") == 1 then
+				python = "python"
+			elseif vim.fn.executable("python3") == 1 then
+				python = "python3"
+			else
+				vim.notify("Python not found. Stopping.", vim.log.levels.WARN)
+				return
+			end
+			vim.notify("Executing fetcher in background: " .. python .. " " .. selected_fetcher, vim.log.levels.INFO)
+			local fetcher_dir = vim.fn.getcwd() .. "/.fetchers"
+			vim.system({ python, selected_fetcher }, {
+				text = true,
+				cwd = fetcher_dir,
+			}, function(obj)
+				vim.schedule(function()
+					if obj.code == 0 then
+						vim.notify(selected_fetcher .. " ran successfully.", vim.log.levels.INFO)
+					else
+						vim.notify(
+							selected_fetcher .. " failed in execution. Please check your script.",
+							vim.log.levels.ERROR
+						)
+					end
+				end)
+			end)
+		end
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "<Esc>", function()
+		close_window()
+	end, { buffer = buf, nowait = true })
+
+	vim.keymap.set("n", "q", function()
+		close_window()
+	end, { buffer = buf, nowait = true })
+
+	vim.api.nvim_create_autocmd("BufLeave", {
+		buffer = buf,
+		callback = function()
+			vim.schedule(function()
+				if vim.api.nvim_buf_is_valid(buf) then
+					vim.api.nvim_buf_delete(buf, { force = true })
+				end
+			end)
+		end,
+		once = true,
+	})
+end
+
 function M.create_module_directory_input()
 	local sep = package.config:sub(1, 1)
 	if not utils.file_exists("." .. sep .. "ahoicpp_project.json") then

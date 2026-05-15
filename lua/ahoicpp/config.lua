@@ -15,6 +15,7 @@ M.defaults = {
 		create_module_dir = "<leader>cpd",
 		compile = "<leader>cpc",
 		clone_external = "<leader>cpe",
+		fetch_external = "<leader>cpf",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
 		execute_app = "<leader>cpx",

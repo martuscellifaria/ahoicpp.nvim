@@ -104,6 +104,28 @@ function M.get_directories()
 	return dirs
 end
 
+function M.get_fetcher_scripts()
+	local cwd = vim.fn.getcwd()
+	local fetchers_dir = cwd .. "/.fetchers"
+
+	if vim.fn.isdirectory(fetchers_dir) == 0 then
+		vim.notify("Directory .fetchers does not exist", vim.log.levels.WARN)
+		return {}
+	end
+
+	local files = vim.fn.readdir(fetchers_dir)
+	local file_list = {}
+
+	for _, file in ipairs(files) do
+		local full_path = fetchers_dir .. "/" .. file
+		if vim.fn.filereadable(full_path) == 1 then
+			local file_name = vim.fn.fnamemodify(file, ":t")
+			table.insert(file_list, file_name)
+		end
+	end
+	return file_list
+end
+
 function M.create_dir(path)
 	if M.dir_exists(path) then
 		return true
