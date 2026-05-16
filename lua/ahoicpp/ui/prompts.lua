@@ -234,10 +234,17 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 	end)
 end
 
+M.fetcher_running = false
+
 function M.fetch_external_dependency()
 	local fetcher_scripts = utils.get_fetcher_scripts()
 	if #fetcher_scripts == 0 then
 		vim.notify("No fetcher scripts found.", vim.log.levels.WARN)
+		return
+	end
+
+	if M.fetcher_running then
+		vim.notify("You have a fetcher script running. Please wait before running again.", vim.log.levels.WARN)
 		return
 	end
 
@@ -288,7 +295,6 @@ function M.fetch_external_dependency()
 		if selected_index <= #fetcher_scripts then
 			local selected_fetcher = fetcher_scripts[selected_index]
 			close_window()
-			vim.notify("Selected fetcher: " .. selected_fetcher)
 			local python = ""
 			if vim.fn.executable("python") == 1 then
 				python = "python"
@@ -298,6 +304,7 @@ function M.fetch_external_dependency()
 				vim.notify("Python not found. Stopping.", vim.log.levels.WARN)
 				return
 			end
+			M.fetcher_running = true
 			vim.notify("Executing fetcher in background: " .. python .. " " .. selected_fetcher, vim.log.levels.INFO)
 			local fetcher_dir = vim.fn.getcwd() .. "/.fetchers"
 			vim.system({ python, selected_fetcher }, {
@@ -313,6 +320,7 @@ function M.fetch_external_dependency()
 							vim.log.levels.ERROR
 						)
 					end
+					M.fetcher_running = false
 				end)
 			end)
 		end
