@@ -90,7 +90,7 @@ function M.create_main(main_name)
 		vim.system({ "git", "init" }, {}, function(obj)
 			vim.schedule(function()
 				if obj.code == 0 then
-					vim.system({ "git", "branch", "-m", "master", "main" }, {}, function(obj2)
+					vim.system({ "git", "symbolic-ref", "HEAD", "refs/heads/main" }, {}, function(obj2)
 						vim.schedule(function()
 							if obj2.code == 0 then
 								vim.notify(
@@ -98,10 +98,14 @@ function M.create_main(main_name)
 									vim.log.levels.INFO
 								)
 							else
-								vim.notify(
-									"Failed to start repository. Do you have git installed?",
-									vim.log.levels.ERROR
-								)
+								vim.system({ "git", "branch", "-m", "master", "main" }, {}, function(obj3)
+									vim.schedule(function()
+										vim.notify(
+											"Successfully started a git repository at the root directory.",
+											vim.log.levels.INFO
+										)
+									end)
+								end)
 							end
 						end)
 					end)
