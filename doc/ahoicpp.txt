@@ -1,5 +1,5 @@
 *ahoicpp.txt*          A.H.O.I. C++ Project Bootstrapper for Neovim
-*ahoicpp*              Version 0.2.0
+*ahoicpp*              Version 0.2.1
 
 
 ==============================================================================
