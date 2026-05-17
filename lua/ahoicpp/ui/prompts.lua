@@ -234,6 +234,11 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 	end)
 end
 
+<<<<<<< HEAD
+=======
+M.fetcher_running = false
+
+>>>>>>> main
 function M.fetch_external_dependency()
 	local fetcher_scripts = utils.get_fetcher_scripts()
 	if #fetcher_scripts == 0 then
@@ -241,6 +246,14 @@ function M.fetch_external_dependency()
 		return
 	end
 
+<<<<<<< HEAD
+=======
+	if M.fetcher_running then
+		vim.notify("You have a fetcher script running. Please wait before running again.", vim.log.levels.WARN)
+		return
+	end
+
+>>>>>>> main
 	local selected_index = 1
 	local width = 40
 	local height = math.min(10, #fetcher_scripts + 2)
@@ -288,7 +301,10 @@ function M.fetch_external_dependency()
 		if selected_index <= #fetcher_scripts then
 			local selected_fetcher = fetcher_scripts[selected_index]
 			close_window()
+<<<<<<< HEAD
 			vim.notify("Selected fetcher: " .. selected_fetcher)
+=======
+>>>>>>> main
 			local python = ""
 			if vim.fn.executable("python") == 1 then
 				python = "python"
@@ -298,6 +314,10 @@ function M.fetch_external_dependency()
 				vim.notify("Python not found. Stopping.", vim.log.levels.WARN)
 				return
 			end
+<<<<<<< HEAD
+=======
+			M.fetcher_running = true
+>>>>>>> main
 			vim.notify("Executing fetcher in background: " .. python .. " " .. selected_fetcher, vim.log.levels.INFO)
 			local fetcher_dir = vim.fn.getcwd() .. "/.fetchers"
 			vim.system({ python, selected_fetcher }, {
@@ -307,12 +327,24 @@ function M.fetch_external_dependency()
 				vim.schedule(function()
 					if obj.code == 0 then
 						vim.notify(selected_fetcher .. " ran successfully.", vim.log.levels.INFO)
+<<<<<<< HEAD
+=======
+						if config.options.autocompile_on_create then
+							vim.defer_fn(function()
+								require("ahoicpp.build").compile()
+							end, 50)
+						end
+>>>>>>> main
 					else
 						vim.notify(
 							selected_fetcher .. " failed in execution. Please check your script.",
 							vim.log.levels.ERROR
 						)
 					end
+<<<<<<< HEAD
+=======
+					M.fetcher_running = false
+>>>>>>> main
 				end)
 			end)
 		end

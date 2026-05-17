@@ -125,6 +125,26 @@ You are also able to override the keymap bindings or options, for example:
 
 You have a few options to fetch external dependencies with `AhoiCpp`. If you need a header only library or something not much complex, you can run `<leader>cpe` and write the git URL to fetch it. However, if you would like to add a more complex dependency such as `opencv` or `postgresql` for example, I recommend creating a python script based on the scripts provided at the `.fetchers` directory. The fetchers scripts are designed on a way they can also compile and make the libraries available globally for the project. `AhoiCpp` will not install anything on your system, keeping all dependencies inside the project itself.
 
+<<<<<<< HEAD
+=======
+#### Current fetchers
+`AhoiCpp` is trying to deal with the problematic of external dependencies and will provide a curated list of scripts to get everything in a "batteries included" fashion. Currently the scripts are:
+
+```
+botan_fetcher.py
+curl_fetcher.py
+eigen_fetcher.py
+grpc_fetcher.py
+libpqxx_fetcher.py
+open62541_fetcher.py
+opencv_fetcher.py
+protobuf_fetcher.py
+spdlog_fetcher.py
+```
+
+Suggestions and problems are also welcomed.
+
+>>>>>>> main
 ### Escafandro coding agent
 
 `AhoiCpp` is introducing sort of a coding agent functionality called `Escafandro`. This is still experimental and based on [TJ DeVries](https://github.com/tjdevries) presentation at Omacon 2026 idea for just in time software without having to search online.

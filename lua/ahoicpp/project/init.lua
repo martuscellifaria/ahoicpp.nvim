@@ -35,11 +35,31 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
 
 	local fetcher_template = templates.get_libpqxx_fetcher()
+<<<<<<< HEAD
 	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
 	fetcher_template = templates.get_opencv_fetcher()
 	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
+=======
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_opencv_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_curl_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "curl_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_botan_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "botan_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_eigen_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "eigen_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_grpc_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "grpc_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_protobuf_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "protobuf_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_spdlog_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "spdlog_fetcher.py", fetcher_template)
+	fetcher_template = templates.get_open62541_fetcher()
+	fs.write_file("." .. sep .. ".fetchers" .. sep .. "open62541_fetcher.py", fetcher_template)
+>>>>>>> main
 
 	local project_json_template = templates.get_project_json_template()
 	project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
@@ -90,7 +110,7 @@ function M.create_main(main_name)
 		vim.system({ "git", "init" }, {}, function(obj)
 			vim.schedule(function()
 				if obj.code == 0 then
-					vim.system({ "git", "branch", "-m", "master", "main" }, {}, function(obj2)
+					vim.system({ "git", "symbolic-ref", "HEAD", "refs/heads/main" }, {}, function(obj2)
 						vim.schedule(function()
 							if obj2.code == 0 then
 								vim.notify(
@@ -98,10 +118,14 @@ function M.create_main(main_name)
 									vim.log.levels.INFO
 								)
 							else
-								vim.notify(
-									"Failed to start repository. Do you have git installed?",
-									vim.log.levels.ERROR
-								)
+								vim.system({ "git", "branch", "-m", "master", "main" }, {}, function(obj3)
+									vim.schedule(function()
+										vim.notify(
+											"Successfully started a git repository at the root directory.",
+											vim.log.levels.INFO
+										)
+									end)
+								end)
 							end
 						end)
 					end)
@@ -112,13 +136,11 @@ function M.create_main(main_name)
 		end)
 	end
 end
-
 function M.create_module(module_name, parent_directory_name)
 	local sep = package.config:sub(1, 1)
-	local add_to_cmake = false
+
 	if not fs.dir_exists("." .. sep .. parent_directory_name) then
 		fs.create_dir("." .. sep .. parent_directory_name)
-		add_to_cmake = true
 	end
 
 	local modules_path = "."
@@ -134,7 +156,10 @@ function M.create_module(module_name, parent_directory_name)
 	fs.create_dir("." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "src")
 
 	local cmake_path = "." .. sep .. parent_directory_name .. sep .. "CMakeLists.txt"
-	fs.append_file(cmake_path, "add_subdirectory(" .. module_name .. ")\n")
+	local parent_cmake_content = fs.read_file(cmake_path) or ""
+	if not string.find(parent_cmake_content, "add_subdirectory(" .. module_name .. ")", 1, true) then
+		fs.append_file(cmake_path, "add_subdirectory(" .. module_name .. ")\n")
+	end
 
 	cmake_path = "." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "CMakeLists.txt"
 	local cpp_version = config.options.cpp_version
@@ -183,7 +208,7 @@ function M.create_module(module_name, parent_directory_name)
 		vim.cmd("edit " .. cpp_path)
 	end
 
-	if fs.file_exists("." .. sep .. "AhoiCppProject.cmake") and add_to_cmake then
+	if fs.file_exists("." .. sep .. "AhoiCppProject.cmake") then
 		local parent_cmake_text = fs.read_file("." .. sep .. "AhoiCppProject.cmake")
 		if parent_cmake_text then
 			if not string.find(parent_cmake_text, "add_subdirectory(" .. parent_directory_name .. ")", 1, true) then
@@ -193,7 +218,7 @@ function M.create_module(module_name, parent_directory_name)
 		end
 	end
 
-	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") and add_to_cmake then
+	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") then
 		local subdirs_text = fs.read_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake")
 		if subdirs_text then
 			if
