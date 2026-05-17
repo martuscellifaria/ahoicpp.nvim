@@ -314,6 +314,11 @@ function M.fetch_external_dependency()
 				vim.schedule(function()
 					if obj.code == 0 then
 						vim.notify(selected_fetcher .. " ran successfully.", vim.log.levels.INFO)
+						if config.options.autocompile_on_create then
+							vim.defer_fn(function()
+								require("ahoicpp.build").compile()
+							end, 50)
+						end
 					else
 						vim.notify(
 							selected_fetcher .. " failed in execution. Please check your script.",
