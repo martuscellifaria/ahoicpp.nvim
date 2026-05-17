@@ -128,13 +128,11 @@ function M.create_main(main_name)
 		end)
 	end
 end
-
 function M.create_module(module_name, parent_directory_name)
 	local sep = package.config:sub(1, 1)
-	local add_to_cmake = false
+
 	if not fs.dir_exists("." .. sep .. parent_directory_name) then
 		fs.create_dir("." .. sep .. parent_directory_name)
-		add_to_cmake = true
 	end
 
 	local modules_path = "."
@@ -150,7 +148,10 @@ function M.create_module(module_name, parent_directory_name)
 	fs.create_dir("." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "src")
 
 	local cmake_path = "." .. sep .. parent_directory_name .. sep .. "CMakeLists.txt"
-	fs.append_file(cmake_path, "add_subdirectory(" .. module_name .. ")\n")
+	local parent_cmake_content = fs.read_file(cmake_path) or ""
+	if not string.find(parent_cmake_content, "add_subdirectory(" .. module_name .. ")", 1, true) then
+		fs.append_file(cmake_path, "add_subdirectory(" .. module_name .. ")\n")
+	end
 
 	cmake_path = "." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "CMakeLists.txt"
 	local cpp_version = config.options.cpp_version
@@ -199,7 +200,7 @@ function M.create_module(module_name, parent_directory_name)
 		vim.cmd("edit " .. cpp_path)
 	end
 
-	if fs.file_exists("." .. sep .. "AhoiCppProject.cmake") and add_to_cmake then
+	if fs.file_exists("." .. sep .. "AhoiCppProject.cmake") then
 		local parent_cmake_text = fs.read_file("." .. sep .. "AhoiCppProject.cmake")
 		if parent_cmake_text then
 			if not string.find(parent_cmake_text, "add_subdirectory(" .. parent_directory_name .. ")", 1, true) then
@@ -209,7 +210,7 @@ function M.create_module(module_name, parent_directory_name)
 		end
 	end
 
-	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") and add_to_cmake then
+	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") then
 		local subdirs_text = fs.read_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake")
 		if subdirs_text then
 			if
