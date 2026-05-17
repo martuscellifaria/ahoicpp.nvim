@@ -35,13 +35,6 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
 
 	local fetcher_template = templates.get_libpqxx_fetcher()
-<<<<<<< HEAD
-	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_opencv_fetcher()
-	fetcher_template = fetcher_template:gsub("{{PROJECT_NAME}}", main_name)
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
-=======
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
 	fetcher_template = templates.get_opencv_fetcher()
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
@@ -59,7 +52,6 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "spdlog_fetcher.py", fetcher_template)
 	fetcher_template = templates.get_open62541_fetcher()
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "open62541_fetcher.py", fetcher_template)
->>>>>>> main
 
 	local project_json_template = templates.get_project_json_template()
 	project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
