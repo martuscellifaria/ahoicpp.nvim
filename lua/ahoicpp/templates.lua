@@ -201,7 +201,7 @@ def run_cmake_on_linux(build_type: str, version: str = "99.99.99", company: str 
         cd build &&
         cmake .. -DCMAKE_BUILD_TYPE={build_type} -D VERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
         ln -sf build/compile_commands.json ../ &&
-        make -j8 > build.log 2>&1
+        make -j$(nproc) > build.log 2>&1
 
         """
     if shutil.which("ninja") is not None:
@@ -237,6 +237,11 @@ def run_cmake_on_windows(build_type: str, version: str = "99.99.99", company: st
         build_command = f"""
         cd build && cmake .. -G Ninja -DCMAKE_BUILD_TYPE={build_type} -DVERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ninja > build.log 2>&1
         """
+    elif shutil.which("make") is not None:
+        build_command = f"""
+        cd build && cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE={build_type} -DVERSION_ARG="{version}" -D COMPANY_ARG="{company}" -D DESCRIPTION_ARG={description} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make -j $env:NUMBER_OF_PROCESSORS > build.log 2>&1
+        """
+
     else:
         print("Ninja not found. Will produce Visual Studio Solution. Please open in Visual Studio or compile it with MSBuild")
 
@@ -419,8 +424,8 @@ end
 function M.get_project_json_template()
 	return [[{
 	"project_name": "{{PROJECT_NAME}}",
-	"build_path": ".{{SEP}}build{{SEP}}App{{SEP}}",
-	"execution_path": ".{{SEP}}build{{SEP}}App{{SEP}}",
+	"build_path": "./build/App/",
+	"execution_path": "./build/App/",
 	"build_as": "release",
 	"version": "99.99.99",
 	"company": "Ahoi Labs",

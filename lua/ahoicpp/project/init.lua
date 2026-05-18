@@ -54,8 +54,11 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. ".fetchers" .. sep .. "open62541_fetcher.py", fetcher_template)
 
 	local project_json_template = templates.get_project_json_template()
-	project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
-	project_json_template = project_json_template:gsub("{{SEP}}", sep)
+	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+		project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name .. ".exe")
+	else
+		project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
+	end
 	fs.write_file("." .. sep .. "ahoicpp_project.json", project_json_template)
 
 	local cpp_version = config.options.cpp_version
