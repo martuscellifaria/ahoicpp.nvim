@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-import fetcher
+from fetcher import run, get_nproc, clone_or_update_submodule, add_to_git, configure_cmake, write_cmake_config, append_to_externals_cmake, append_to_project_cmake
 
 def main():
     root = Path(__file__).resolve().parent.parent

@@ -120,7 +120,9 @@ function M.get_fetcher_scripts()
 		local full_path = fetchers_dir .. "/" .. file
 		if vim.fn.filereadable(full_path) == 1 then
 			local file_name = vim.fn.fnamemodify(file, ":t")
-			table.insert(file_list, file_name)
+			if vim.endswith(file_name, "_fetcher.py") then
+				table.insert(file_list, file_name)
+			end
 		end
 	end
 	return file_list

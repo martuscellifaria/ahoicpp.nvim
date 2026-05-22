@@ -34,24 +34,15 @@ function M.create_main(main_name)
 	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
 
-	local fetcher_template = templates.get_libpqxx_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "libpqxx_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_opencv_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "opencv_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_curl_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "curl_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_botan_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "botan_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_eigen_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "eigen_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_grpc_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "grpc_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_protobuf_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "protobuf_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_spdlog_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "spdlog_fetcher.py", fetcher_template)
-	fetcher_template = templates.get_open62541_fetcher()
-	fs.write_file("." .. sep .. ".fetchers" .. sep .. "open62541_fetcher.py", fetcher_template)
+	local sourced_file = debug.getinfo(1, "S").source:sub(2)
+	local source_dir = vim.fn.fnamemodify(sourced_file, ":h:h") .. sep .. "fetcher_scripts"
+	local target_dir = vim.fn.getcwd() .. sep .. ".fetchers"
+	local files = vim.fn.glob(source_dir .. "/*.py", false, true)
+	for _, file in ipairs(files) do
+		local filename = vim.fn.fnamemodify(file, ":t")
+		local target = target_dir .. "/" .. filename
+		vim.uv.fs_copyfile(file, target)
+	end
 
 	local project_json_template = templates.get_project_json_template()
 	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then

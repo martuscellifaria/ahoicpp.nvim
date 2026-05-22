@@ -1,21 +1,20 @@
-import fetcher
+import sys
+from pathlib import Path
+from fetcher import run, get_nproc, clone_or_update_submodule, add_to_git, configure_cmake, write_cmake_config, append_to_externals_cmake, append_to_project_cmake
 
 def main():
     root = Path(__file__).resolve().parent.parent
     
-    # Clone/update postgres first
     postgres_dir = clone_or_update_submodule(root, "postgres", 
                                             "https://github.com/postgres/postgres.git", 
                                             "REL_16_2")
     
-    # Clone/update libpqxx
     libpqxx_dir = clone_or_update_submodule(root, "libpqxx", 
                                            "https://github.com/jtv/libpqxx.git", 
                                            "7.9.2")
     
     add_to_git(root, ["externals/libpqxx", "externals/postgres"])
     
-    # Build postgres
     pq_output = postgres_dir / "build-output"
     if not (pq_output / "lib" / "libpq.so").exists() and \
        not (pq_output / "lib" / "libpq.dylib").exists() and \
@@ -28,7 +27,6 @@ def main():
         run(["make", "-C", "src/include", "install"], cwd=postgres_dir)
         run(["make", "-C", "src/port", "install"], cwd=postgres_dir)
     
-    # Build libpqxx
     pqxx_output = libpqxx_dir / "build-output"
     if not (pqxx_output / "lib" / "libpqxx-7.9.so").exists() and \
        not (pqxx_output / "lib" / "libpqxx-7.9.dylib").exists():
@@ -38,7 +36,6 @@ def main():
             "-DSKIP_BUILD_TEST=ON"
         ])
     
-    # Write configs
     write_cmake_config(root / "externals", "libpqxx_config.cmake", f"""set(LIBPQXX_INCLUDE_DIR "{pqxx_output / "include"}")
 set(LIBPQ_INCLUDE_DIR "{pq_output / "include"}")
 set(LIBPQXX_LIB_DIR "{pqxx_output / "lib"}")
