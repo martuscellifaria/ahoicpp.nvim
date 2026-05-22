@@ -108,7 +108,8 @@ function M.execute_compiled_binary()
 			if json_data and json_data.project_name and json_data.build_path and json_data.execution_path then
 				if json_data.project_name ~= "" and json_data.execution_path ~= "" then
 					if utils.file_exists(json_data.execution_path .. json_data.project_name) then
-						vim.cmd("terminal cd " .. json_data.execution_path .. "&& ./" .. json_data.project_name)
+						local sep = package.config:sub(1, 1)
+						vim.cmd("terminal cd " .. json_data.execution_path .. "&& ." .. sep .. json_data.project_name)
 						vim.cmd("startinsert")
 					else
 						vim.notify("Binary not found. Have you compiled it already?", vim.log.levels.WARN)
