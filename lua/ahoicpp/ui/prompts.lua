@@ -190,11 +190,11 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 							"                                              Press <ENTER> to close",
 						}
 						dialogs.create_popup(repo_name .. " cloned", message_lines)
-						if config.options.autocompile_on_create then
-							vim.defer_fn(function()
-								require("ahoicpp.build").compile()
-							end, 50)
-						end
+					end
+					if config.options.autocompile_on_create then
+						vim.defer_fn(function()
+							require("ahoicpp.build").compile()
+						end, 50)
 					end
 				else
 					vim.notify(
@@ -224,11 +224,7 @@ list(APPEND AHOICPP_EXTERNALS_TARGETS {{REPO_NAME}})]]
 			"",
 		}, function(confirmed)
 			if confirmed ~= nil then
-				if confirmed then
-					run_clone(input, true)
-				else
-					run_clone(input, false)
-				end
+				run_clone(input, confirmed)
 			end
 		end)
 	end)
@@ -314,6 +310,19 @@ function M.fetch_external_dependency()
 				vim.schedule(function()
 					if obj.code == 0 then
 						vim.notify(selected_fetcher .. " ran successfully.", vim.log.levels.INFO)
+						if config.options.enable_popups then
+							local message_lines = {
+								"",
+								selected_fetcher .. " was successfully added as submodule.",
+								"It may be available to all your classes.",
+								"Fetcher is an experimental feature, if something fails, you may have",
+								"to check the CMake structure of your project.",
+								"",
+								"",
+								"                                              Press <ENTER> to close",
+							}
+							dialogs.create_popup(selected_fetcher .. " compiled and integrated", message_lines)
+						end
 						if config.options.autocompile_on_create then
 							vim.defer_fn(function()
 								require("ahoicpp.build").compile()
