@@ -402,6 +402,7 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 *.cmake
+!AhoiCppExternals.cmake
 !AhoiCppProject.cmake
 !AhoiCppSubdirs.cmake
 
