@@ -15,7 +15,6 @@ M.defaults = {
 		create_module_dir = "<leader>cpd",
 		compile = "<leader>cpc",
 		clone_external = "<leader>cpe",
-		fetch_external = "<leader>cpf",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
 		execute_app = "<leader>cpx",
@@ -33,7 +32,7 @@ M.defaults = {
 }
 
 M.options = vim.deepcopy(M.defaults)
-M.cpp_supported_versions = { 11, 14, 17, 20, 23 }
+M.cpp_supported_versions = { 11, 14, 17, 20, 23, 26 }
 
 function M.setup(user_config)
 	M.options = vim.tbl_deep_extend("force", M.defaults, user_config or {})

@@ -28,21 +28,10 @@ function M.create_main(main_name)
 	local app_path = "." .. sep .. "App" .. sep .. "src"
 	fs.create_dir(app_path)
 	fs.create_dir("." .. sep .. "externals")
-	fs.create_dir("." .. sep .. ".fetchers")
 	fs.write_file("." .. sep .. "externals" .. sep .. "README.md", templates.get_externals_readme())
 	local readme_template = templates.get_readme_template()
 	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
-
-	local sourced_file = debug.getinfo(1, "S").source:sub(2)
-	local source_dir = vim.fn.fnamemodify(sourced_file, ":h:h") .. sep .. "fetcher_scripts"
-	local target_dir = vim.fn.getcwd() .. sep .. ".fetchers"
-	local files = vim.fn.glob(source_dir .. "/*.py", false, true)
-	for _, file in ipairs(files) do
-		local filename = vim.fn.fnamemodify(file, ":t")
-		local target = target_dir .. "/" .. filename
-		vim.uv.fs_copyfile(file, target)
-	end
 
 	local project_json_template = templates.get_project_json_template()
 	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then

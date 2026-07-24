@@ -34,7 +34,6 @@ Features:
   - Add modules (static libraries) to your project
   - Create modules in custom directories
   - Clone external Git dependencies to an externals directory
-  - Fetch complex external dependencies with custom scripts
   - Automatic Git initialization
   - Optional autocompile on project/module creation
   - Debug/Release build type toggling
@@ -110,7 +109,6 @@ DEFAULT CONFIGURATION ~
             create_module = "<leader>cpm",
             create_module_dir = "<leader>cpd",
             clone_external = "<leader>cpe",
-            fetch_external = "<leader>cpf",
             toggle_autocompile = "<leader>cpt",
             toggle_debug_compilation = "<leader>cpb",
             compile = "<leader>cpc",
@@ -187,23 +185,10 @@ ADDING A MODULE TO A CUSTOM DIRECTORY ~
     4. The module is created in your custom directory
 
 FETCHING EXTERNAL DEPENDENCIES ~
-    You have a few options to fetch external dependencies with AhoiCpp.
-
-    SIMPLE GIT CLONE:
     - Press |ahoicpp-clone_external| (`<leader>cpe` by default)
     - Paste a Git repository URL
     - The repository is cloned to the `externals/` directory
     - Best for header-only libraries or simple dependencies
-
-    COMPLEX DEPENDENCIES WITH SCRIPTS:
-    - Press |ahoicpp-fetch_external| (`<leader>cpf` by default)
-    - This runs a background script to fetch more complex dependencies
-    - For libraries like `opencv` or `postgresql`, create a Python script
-      based on the templates in the `.fetchers` directory
-    - Fetcher scripts can compile and make libraries available globally
-      for the project
-    - AhoiCpp will not install anything on your system, keeping all
-      dependencies inside the project itself
 
 COMPILING YOUR PROJECT ~
     - Press |ahoicpp-compile| (`<leader>cpc` by default)
@@ -256,10 +241,6 @@ DEFAULT KEYMAPS ~
     `<leader>cpe`               Clone external Git repository to the externals
                                 directory of the C++ project
 
-    *ahoicpp-fetch_external*
-    `<leader>cpf`               Fetch more complex external dependencies by
-                                running a script in background
-
     *ahoicpp-toggle_autocompile*
     `<leader>cpt`               Toggle autocompilation at module and/or app
                                 creation (enabled by default)
@@ -298,7 +279,6 @@ After running `create_app`, the following structure is created:
 
 >
     YourApp/
-    ├── .fetchers/                    # Scripts for fetching dependencies
     ├── .git/                         # Git repository (if enabled)
     ├── .gitignore                    # Git ignore patterns
     ├── CMakeLists.txt                # Root CMake configuration

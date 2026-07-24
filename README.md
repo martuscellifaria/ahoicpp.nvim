@@ -65,7 +65,6 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 | `<leader>cpd` | Creates C++ class within custom named directory and add CMake files          |
 | `<leader>cpc` | Compiles the current C++ project                                             |
 | `<leader>cpe` | Clones external Git repository to the externals directory of the C++ project |
-| `<leader>cpf` | Fetches more complex external dependencies by running a script in background |
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
 | `<leader>cpb` | Toggles build type (release/debug)                                           |
 | `<leader>cpx` | Executes the compiled binary                                                 |
@@ -92,7 +91,6 @@ AhoiCpp provides a configurable interface. An example follows:
 		create_module_dir = "<leader>cpd",
 		compile = "<leader>cpc",
 		clone_external = "<leader>cpe",
-		fetch_external = "<leader>cpf",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
 		execute_app = "<leader>cpx",
@@ -123,22 +121,7 @@ You are also able to override the keymap bindings or options, for example:
 
 ### Fetching external dependencies
 
-You have a few options to fetch external dependencies with `AhoiCpp`. If you need a header only library or something not much complex, you can run `<leader>cpe` and write the git URL to fetch it. However, if you would like to add a more complex dependency such as `opencv` or `postgresql` for example, I recommend creating a python script based on the scripts provided at the `.fetchers` directory. The fetchers scripts are designed on a way they can also compile and make the libraries available globally for the project. `AhoiCpp` will not install anything on your system, keeping all dependencies inside the project itself.
-
-#### Current fetchers
-`AhoiCpp` is trying to deal with the problematic of external dependencies and will provide a curated list of scripts to get everything in a "batteries included" fashion. Currently the scripts are:
-
-```
-botan_fetcher.py
-curl_fetcher.py
-eigen_fetcher.py
-grpc_fetcher.py
-libpqxx_fetcher.py
-open62541_fetcher.py
-opencv_fetcher.py
-protobuf_fetcher.py
-spdlog_fetcher.py
-```
+If you need a header only library or something not much complex, you can run `<leader>cpe` and write the git URL to fetch it. However, if you would like to add a more complex dependency, you'll may have to compile yourself.
 
 Suggestions and problems are also welcomed.
 
@@ -158,7 +141,6 @@ After running `<leader>cpa YourApp`:
 
 ```
 YourApp/
-├── .fetchers/
 ├── .git/
 ├── .gitignore
 ├── AhoiCppExternals.cmake
