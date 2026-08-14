@@ -6,6 +6,7 @@ M.defaults = {
 	cpp_version = 23,
 	enable_popups = true,
 	git_init = true,
+	add_tests = false,
 	keymaps = {
 		group_c = "<leader>c",
 		group_cp = "<leader>cp",
@@ -36,6 +37,9 @@ M.cpp_supported_versions = { 11, 14, 17, 20, 23, 26 }
 
 function M.setup(user_config)
 	M.options = vim.tbl_deep_extend("force", M.defaults, user_config or {})
+	if M.options.cpp_version < 17 then
+		M.options.add_tests = false
+	end
 end
 
 function M.toggle_autocompile()

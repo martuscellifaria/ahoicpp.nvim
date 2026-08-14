@@ -1,5 +1,5 @@
 *ahoicpp.txt*          A.H.O.I. C++ Project Bootstrapper for Neovim
-*ahoicpp*              Version 0.2.1
+*ahoicpp*              Version 0.3.0
 
 
 ==============================================================================
@@ -13,10 +13,11 @@ CONTENTS                                                      *ahoicpp-contents*
   6. Commands & Keymaps .......................... |ahoicpp-keymaps|
   7. Project Structure ........................... |ahoicpp-structure|
   8. Escafandro Coding Agent ..................... |ahoicpp-escafandro|
-  9. Health Check ................................ |ahoicpp-health|
- 10. Development & Testing ....................... |ahoicpp-dev|
- 11. Troubleshooting ............................. |ahoicpp-troubleshooting|
- 12. License ..................................... |ahoicpp-license|
+  9. Automatic Tests With GoogleTest ............. |ahoicpp-testing|
+ 10. Health Check ................................ |ahoicpp-health|
+ 11. Development & Testing ....................... |ahoicpp-dev|
+ 12. Troubleshooting ............................. |ahoicpp-troubleshooting|
+ 13. License ..................................... |ahoicpp-license|
 
 
 ==============================================================================
@@ -40,7 +41,8 @@ Features:
   - Binary execution from within Neovim
   - Cross-platform build script (Python)
   - Version embedding for Windows/Linux
-  - Escafandro AI coding agent (experimental)
+  - Escafandro AI coding agent
+  - Automatic tests with googletest
 
 
 ==============================================================================
@@ -50,7 +52,7 @@ AhoiCpp requires the following to be installed and available in your PATH:
 
   - Neovim 0.11 or higher (recommended, some vim.api and vim.fn functions
     require this version)
-  - C++ compiler (g++ 14.3.0 recommended on development environment)
+  - C++ compiler
   - CMake
   - Git (optional, for repository initialization and external cloning)
   - Python 3 (for the build script)
@@ -101,6 +103,7 @@ DEFAULT CONFIGURATION ~
         cpp_version = 23,
         enable_popups = true,
         git_init = true,
+        add_tests = false,
         keymaps = {
             group_c  = "<leader>c",
             group_cp = "<leader>cp",
@@ -301,9 +304,13 @@ After running `create_app`, the following structure is created:
     │       ├── include/
     │       │   └── MyModule/
     │       │       └── MyModule.h
-    │       └── src/
+    │       ├── src/
     │           └── MyModule.cpp
+    │       └── test/
+    │		├── CMakeLists.txt    # If tests are enabled
+    │           └── MyModule.cpp      # If tests are enabled
     └── externals/                    # Third-party dependencies
+	├── googletest/		      # If tests are enabled
         └── README.md
 <
 
@@ -358,7 +365,18 @@ CONFIGURATION ~
 
 
 ==============================================================================
-9. HEALTH CHECK                                            *ahoicpp-health*
+9. AUTOMATIC TESTING WITH GOOGLETEST                                            *ahoicpp-testing*
+
+`AhoiCpp` has the `add_tests = false` configuration by default, so you won't 
+start downloading stuff without being aware of it.
+However, if you set it to true in your configuration (`add_tests = true`), 
+`AhoiCpp` will clone [googletest](https://github.com/google/googletest) to 
+externals/, and every module you add to your project will come with a test/ 
+directory. Since `GoogleTest` requires C++ 17 or higher, 
+the tests will only work if at least C++ 17 is selected.
+
+==============================================================================
+10. HEALTH CHECK                                            *ahoicpp-health*
 
 Run `:checkhealth ahoicpp` to verify your installation.
 
@@ -372,7 +390,7 @@ The health check verifies:
 
 
 ==============================================================================
-10. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
+11. DEVELOPMENT & TESTING                                      *ahoicpp-dev*
 
 AhoiCpp uses Plenary.nvim for testing.
 
@@ -410,7 +428,7 @@ TEST STRUCTURE ~
 
 
 ==============================================================================
-11. TROUBLESHOOTING                                  *ahoicpp-troubleshooting*
+12. TROUBLESHOOTING                                  *ahoicpp-troubleshooting*
 
 | Error                           | Solution                               |
 | ------------------------------- | -------------------------------------- |
@@ -424,7 +442,7 @@ TEST STRUCTURE ~
 
 
 ==============================================================================
-12. LICENSE                                                *ahoicpp-license*
+13. LICENSE                                                *ahoicpp-license*
 
 MIT License
 

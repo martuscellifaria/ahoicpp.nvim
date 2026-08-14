@@ -133,6 +133,9 @@ function M.create_module_input()
 
 	create_prompt_dialog("AhoiCpp Add Module", "Module Name: ", function(input)
 		if input and utils.is_valid_class_name(input) then
+			if config.options.add_tests then
+				M.clone_google_test()
+			end
 			project.create_module(input, "Modules")
 		else
 			vim.notify("Invalid class name provided.", vim.log.levels.WARN)
@@ -348,6 +351,9 @@ function M.create_module_directory_input()
 				vim.fn.prompt_setcallback(buf2, function(input2)
 					vim.api.nvim_win_close(win2, true)
 					if input2 and input2 ~= "" and utils.is_valid_class_name(input2) then
+						if config.options.add_tests then
+							M.clone_google_test()
+						end
 						project.create_module(input2, directory_name)
 					else
 						vim.notify("Invalid module name provided.", vim.log.levels.ERROR)
@@ -478,6 +484,26 @@ function M.escafandro_debug()
 			end
 		end)
 	end
+end
+
+function M.clone_google_test()
+	vim.notify("Google test not found. Adding it to externals/", vim.log.levels.INFO)
+	vim.system(
+		{ "git", "submodule", "add", "https://github.com/google/googletest.git", "externals/" .. "googletest" },
+		{},
+		function(obj)
+			vim.schedule(function()
+				if obj.code == 0 then
+					vim.notify("Successfully cloned googletest as submodule.", vim.log.levels.INFO)
+				else
+					vim.notify(
+						"Failed to add from repository. Check your command, repository, or if you already have it added.",
+						vim.log.levels.WARN
+					)
+				end
+			end)
+		end
+	)
 end
 
 return M

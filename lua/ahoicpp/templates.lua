@@ -3,10 +3,10 @@ local M = {}
 function M.get_header_template()
 	return [[#pragma once
 
-class {{CLASS_NAME}} {
+class {{MODULE_NAME}} {
 public:
-    {{CLASS_NAME}}();
-    virtual ~{{CLASS_NAME}}();
+    {{MODULE_NAME}}();
+    virtual ~{{MODULE_NAME}}();
 
 private:
 
@@ -14,14 +14,59 @@ private:
 end
 
 function M.get_cpp_template()
-	return [[#include "{{CLASS_NAME}}.h"
+	return [[#include "{{MODULE_NAME}}.h"
 
 
-{{CLASS_NAME}}::{{CLASS_NAME}}() {}
+{{MODULE_NAME}}::{{MODULE_NAME}}() {}
 
-{{CLASS_NAME}}::~{{CLASS_NAME}}() {}
+{{MODULE_NAME}}::~{{MODULE_NAME}}() {}
 
 
+]]
+end
+
+function M.get_test_cpp_template()
+	return [[#include "{{MODULE_NAME}}.h"
+#include <gtest/gtest.h>
+#include <memory>
+
+TEST(BasicSetupTest, GoogleTestWorks) {
+    EXPECT_EQ(1, 1);
+    EXPECT_TRUE(true);
+}
+
+class {{MODULE_NAME}}Test : public ::testing::Test {
+protected:
+    void SetUp() override {
+	test_instance_ = std::make_unique<{{MODULE_NAME}}>();
+    }
+    void TearDown() override {
+    }
+    std::unique_ptr<{{MODULE_NAME}}> test_instance_;
+};
+
+]]
+end
+
+function M.get_test_cmake_template()
+	return [[set(TEST_TARGET {{MODULE_NAME}}Test)
+
+file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+add_executable(${TEST_TARGET} ${TEST_SOURCES})
+target_include_directories(${TEST_TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/externals/googletest/googletest/include)
+
+target_compile_features(${TEST_TARGET} PUBLIC cxx_std_{{CPP_VERSION}})
+target_link_libraries(${TEST_TARGET} PRIVATE
+    # You can link everything you may need here
+    {{MODULE_NAME}}
+    gtest
+    gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(${TEST_TARGET})
 ]]
 end
 

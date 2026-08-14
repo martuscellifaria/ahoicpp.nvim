@@ -8,7 +8,7 @@ function M.create_class(class_name, output_dir)
 	local sep = package.config:sub(1, 1)
 	local header_path = output_dir .. sep .. class_name .. ".h"
 	local header_template = templates.get_header_template()
-	header_template = header_template:gsub("{{CLASS_NAME}}", class_name)
+	header_template = header_template:gsub("{{MODULE_NAME}}", class_name)
 	local ok = fs.write_file(header_path, header_template)
 	if ok then
 		vim.cmd("edit " .. header_path)
@@ -16,7 +16,7 @@ function M.create_class(class_name, output_dir)
 
 	local cpp_path = output_dir .. sep .. class_name .. ".cpp"
 	local cpp_template = templates.get_cpp_template()
-	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", class_name)
+	cpp_template = cpp_template:gsub("{{MODULE_NAME}}", class_name)
 	ok = fs.write_file(cpp_path, cpp_template)
 	if ok then
 		vim.cmd("edit " .. cpp_path)
@@ -145,7 +145,22 @@ function M.create_module(module_name, parent_directory_name)
 	local cmake_template = templates.get_module_cmake_template()
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	if config.options.add_tests then
+		cmake_template = cmake_template .. "add_subdirectory(test)"
+	end
 	fs.write_file(cmake_path, cmake_template)
+
+	if config.options.add_tests then
+		local test_path = "." .. sep .. parent_directory_name .. sep .. module_name .. sep .. "test"
+		fs.create_dir(test_path)
+		cmake_template = templates.get_test_cmake_template()
+		cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
+		cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+		fs.write_file(test_path .. sep .. "CMakeLists.txt", cmake_template)
+		local test_cpp_template = templates.get_test_cpp_template()
+		test_cpp_template = test_cpp_template:gsub("{{MODULE_NAME}}", module_name)
+		fs.write_file(test_path .. sep .. module_name .. "Test.cpp", test_cpp_template)
+	end
 
 	local header_path = "."
 		.. sep
@@ -160,7 +175,7 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".h"
 	local header_template = templates.get_header_template()
-	header_template = header_template:gsub("{{CLASS_NAME}}", module_name)
+	header_template = header_template:gsub("{{MODULE_NAME}}", module_name)
 	local ok = fs.write_file(header_path, header_template)
 	if ok then
 		vim.cmd("edit " .. header_path)
@@ -177,7 +192,7 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".cpp"
 	local cpp_template = templates.get_cpp_template()
-	cpp_template = cpp_template:gsub("{{CLASS_NAME}}", module_name)
+	cpp_template = cpp_template:gsub("{{MODULE_NAME}}", module_name)
 	ok = fs.write_file(cpp_path, cpp_template)
 	if ok then
 		vim.cmd("edit " .. cpp_path)
