@@ -6,7 +6,15 @@ function M.get_header_template()
 class {{MODULE_NAME}} {
 public:
     {{MODULE_NAME}}();
-    virtual ~{{MODULE_NAME}}();
+
+    /* Rule of five: if you need one, better add all! */
+    /* Destructor, copy constructor, copy assignment, move constructor, move assignment. */
+    // ~{{MODULE_NAME}}() = default;
+    // {{MODULE_NAME}}(const {{MODULE_NAME}}&) = default;
+    // {{MODULE_NAME}}& operator=(const {{MODULE_NAME}}&) = default;
+    // {{MODULE_NAME}}({{MODULE_NAME}}&&) noexcept = default;
+    // {{MODULE_NAME}}& operator=({{MODULE_NAME}}&&) noexcept = default;
+
 
 private:
 
@@ -17,9 +25,8 @@ function M.get_cpp_template()
 	return [[#include "{{MODULE_NAME}}.h"
 
 
-{{MODULE_NAME}}::{{MODULE_NAME}}() {}
-
-{{MODULE_NAME}}::~{{MODULE_NAME}}() {}
+{{MODULE_NAME}}::{{MODULE_NAME}}() {
+}
 
 
 ]]
@@ -42,6 +49,7 @@ protected:
     }
     void TearDown() override {
     }
+public:
     std::unique_ptr<{{MODULE_NAME}}> test_instance_;
 };
 
