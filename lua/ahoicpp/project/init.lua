@@ -55,6 +55,7 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. "App" .. sep .. "version.rc.in", templates.get_version_rc_in())
 
 	fs.write_file("." .. sep .. ".gitignore", templates.get_gitignore())
+	fs.write_file("." .. sep .. ".clangd", templates.get_clangd_template())
 	fs.write_file(
 		"." .. sep .. "AhoiCppProject.cmake",
 		"#Created automagically by AhoiCpp. Please do not modify this file."

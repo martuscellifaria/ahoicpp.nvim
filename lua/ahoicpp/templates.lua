@@ -468,6 +468,26 @@ __pycache__/
 ]]
 end
 
+function M.get_clangd_template()
+	return [[CompileFlags:
+  Add: [-Wall, -Wextra]
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - performance-*
+      - cppcoreguidelines-special-member-functions
+      - modernize-use-override
+      - modernize-use-nullptr
+      - modernize-use-using
+      - readability-braces-around-statements
+      - readability-container-size-empty
+    Remove: []
+    CheckOptions: {}
+]]
+end
+
 function M.get_readme_template()
 	return [[# {{PROJECT_NAME}}
 
