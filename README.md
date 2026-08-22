@@ -11,7 +11,7 @@ AhoiCpp lets you create classes, libraries and your own app entrypoint with the 
 
 ## Dependencies
 
-AhoiCpp assumes you have a C++ compiler (I use g++ 14.3.0 on my development environment), `cmake`, `git` and `python` installed. If not, you should do it first.
+AhoiCpp assumes you have a C++ compiler (I use g++ 16.1.1 on my development environment), `cmake`, `git` and `python` installed. If not, you should do it first.
 Of course you have to have `Neovim` as well, version `0.11` or higher is recommended, since some `vim.api` and `vim.fn` functions are new.
 
 &nbsp;
@@ -65,7 +65,6 @@ git clone https://github.com/martuscellifaria/ahoicpp.nvim ~/.config/nvim/pack/p
 | `<leader>cpd` | Creates C++ class within custom named directory and add CMake files          |
 | `<leader>cpc` | Compiles the current C++ project                                             |
 | `<leader>cpe` | Clones external Git repository to the externals directory of the C++ project |
-| `<leader>cpf` | Fetches more complex external dependencies by running a script in background |
 | `<leader>cpt` | Toggles autocompilation at module and/or app creation (enabled by default)   |
 | `<leader>cpb` | Toggles build type (release/debug)                                           |
 | `<leader>cpx` | Executes the compiled binary                                                 |
@@ -83,6 +82,7 @@ AhoiCpp provides a configurable interface. An example follows:
 	cpp_version = 23,
 	enable_popups = true,
 	git_init = true,
+	add_tests = false,
 	keymaps = {
 		group_c = "<leader>c",
 		group_cp = "<leader>cp",
@@ -92,7 +92,6 @@ AhoiCpp provides a configurable interface. An example follows:
 		create_module_dir = "<leader>cpd",
 		compile = "<leader>cpc",
 		clone_external = "<leader>cpe",
-		fetch_external = "<leader>cpf",
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
 		execute_app = "<leader>cpx",
@@ -114,10 +113,39 @@ You are also able to override the keymap bindings or options, for example:
 
 ```lua
 {
-    'martuscellifaria/ahoicpp.nvim',
-    config = function()
-      require('ahoicpp').setup({ autocompile_on_create = false, keymaps = { compile = "<leader>cc" } })
-    end,
+'martuscellifaria/ahoicpp.nvim',
+config = function()
+  require('ahoicpp').setup {
+    autocompile_on_create = true,
+    compile_as_debug = false,
+    enable_popups = true,
+    add_tests = true,
+    git_init = true,
+    keymaps = {
+      group_c = '<leader>c',
+      group_cp = '<leader>cp',
+      create_app = '<leader>cpa',
+      help = '<leader>cph',
+      create_module = '<leader>cpm',
+      create_module_dir = '<leader>cpd',
+      compile = '<leader>cpc',
+      clone_external = '<leader>cpe',
+      toggle_autocompile = '<leader>cpt',
+      toggle_debug_compilation = '<leader>cpb',
+      execute_app = '<leader>cpx',
+      escafandro_coding = '<leader>cec',
+      escafandro_explain = '<leader>cee',
+      toggle_escafandro_debug_assist = '<leader>cet',
+    },
+    escafandro = {
+      ip = '127.0.0.1:8080',
+      engine = 'llamacpp',
+      model = 'qwen2.5-coder-7b-instruct-q4_k_m',
+      max_tokens = 500,
+      debug_assist = true,
+    },
+  }
+end,
 }
 ```
 
@@ -161,7 +189,6 @@ After running `<leader>cpa YourApp`:
 
 ```
 YourApp/
-├── .fetchers/
 ├── .git/
 ├── .gitignore
 ├── AhoiCppExternals.cmake
@@ -179,6 +206,10 @@ YourApp/
 └── externals/         (created for Git dependencies)
     └── README.md
 ```
+
+### Testing your C++ modules with GoogleTest
+`AhoiCpp` has the `add_tests = false` configuration by default, so you won't start downloading stuff without being aware of it.
+However, if you set it to true in your configuration (`add_tests = true`), `AhoiCpp` will clone [googletest](https://github.com/google/googletest) to externals/, and every module you add to your project will come with a test/ directory. Since `GoogleTest` requires C++ 17 or higher, the tests will only work if at least C++ 17 is selected.
 
 ## Demo
 
