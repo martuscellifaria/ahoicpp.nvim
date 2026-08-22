@@ -85,8 +85,29 @@ function M.create_main(main_name)
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	fs.write_file("." .. sep .. "App" .. sep .. "CMakeLists.txt", cmake_template)
-
 	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
+
+	-- Cross-compile utils and docker
+	fs.create_dir("." .. sep .. "cmake")
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake",
+		templates.get_cmake_toolchain_aarch64_linux_template()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake",
+		templates.get_cmake_toolchain_x86_64_linux_template()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake",
+		templates.get_cmake_toolchain_windows_x86_64_template()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake",
+		templates.get_cmake_toolchain_windows_arm64_template()
+	)
+	fs.write_file("." .. sep .. "Dockerfile", templates.get_cross_compile_dockerfile())
+	fs.write_file("." .. sep .. "start_devcontainer.sh", templates.get_start_devcontainer_template())
+	fs.write_file("." .. sep .. "cross_compile_in_devcontainer.sh", templates.get_cross_compile_in_devcontainer())
 
 	if config.options.autocompile_on_create then
 		require("ahoicpp.build").compile()
