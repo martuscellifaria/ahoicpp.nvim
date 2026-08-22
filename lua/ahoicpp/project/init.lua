@@ -77,6 +77,29 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. "App" .. sep .. "CMakeLists.txt", cmake_template)
 
 	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
+	fs.create_dir("." .. sep .. "cmake")
+	fs.write_file("." .. sep .. "Dockerfile", templates.get_cross_compile_dockerfile_template())
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake",
+		templates.get_toolchain_x86_64_linux()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake",
+		templates.get_toolchain_aarch64_linux()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake",
+		templates.get_toolchain_x86_64_windows()
+	)
+	fs.write_file(
+		"." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake",
+		templates.get_toolchain_aarch64_windows()
+	)
+	fs.write_file("." .. sep .. "start_devcontainer.sh", templates.get_start_devcontainer_script())
+	fs.write_file(
+		"." .. sep .. "cross_compile_in_devcontainer.sh",
+		templates.get_cross_compile_in_devcontainer_script()
+	)
 
 	if config.options.autocompile_on_create then
 		require("ahoicpp.build").compile()

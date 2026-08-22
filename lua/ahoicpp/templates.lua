@@ -507,4 +507,200 @@ function M.get_project_json_template()
 }]]
 end
 
+function M.get_cross_compile_dockerfile_template()
+	return [[FROM ubuntu:26.04
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    ninja-build \
+    git \
+    pkg-config \
+    g++-16-x86-64-linux-gnu \
+    gcc-16-x86-64-linux-gnu \
+    g++-16-aarch64-linux-gnu \
+    gcc-16-aarch64-linux-gnu \
+    gcc-16 \
+    g++-16 \
+    clang \
+    lld \
+    llvm \
+    unzip \
+    wget \
+    xz-utils \
+    file \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ARCH=$(uname -m) && \
+    echo "Detected host architecture: $ARCH" && \
+    case "$ARCH" in \
+        aarch64|arm64) SUFFIX="aarch64" ;; \
+        x86_64|amd64) SUFFIX="x86_64" ;; \
+        *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
+    esac && \
+    echo "Downloading LLVM-mingw for $SUFFIX" && \
+    wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
+    tar -xf llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz -C /opt && \
+    rm llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
+    echo "${SUFFIX}" > /opt/llvm-mingw-arch.txt && \
+    echo "LLVM-mingw installed for architecture: $SUFFIX"
+
+RUN SUFFIX=$(cat /opt/llvm-mingw-arch.txt) && \
+    DIR="/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}" && \
+    echo "Creating wrappers from: $DIR" && \
+    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target x86_64-w64-mingw32 "$@"' > /usr/local/bin/mingw-clang++ && \
+    chmod +x /usr/local/bin/mingw-clang++ && \
+    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target aarch64-w64-mingw32 "$@"' > /usr/local/bin/mingw-arm64-clang++ && \
+    chmod +x /usr/local/bin/mingw-arm64-clang++
+
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-16 100 \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-16 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-16 100
+
+CMD ["/bin/bash"]
+]]
+end
+
+function M.get_toolchain_x86_64_linux()
+	return [[set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+
+set(CMAKE_C_COMPILER x86_64-linux-gnu-gcc-16)
+set(CMAKE_CXX_COMPILER x86_64-linux-gnu-g++-16)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_FIND_ROOT_PATH /usr/x86_64-linux-gnu)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+]]
+end
+
+function M.get_toolchain_aarch64_linux()
+	return [[set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc-16)
+set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++-16)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_FIND_ROOT_PATH /usr/aarch64-linux-gnu)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+]]
+end
+
+function M.get_toolchain_x86_64_windows()
+	return [[set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+
+if(DEFINED ENV{LLVM_MINGW_SUFFIX})
+    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
+else()
+    set(LLVM_SUFFIX "x86_64")
+endif()
+
+set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
+set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
+
+set(CMAKE_C_COMPILER_TARGET x86_64-w64-mingw32)
+set(CMAKE_CXX_COMPILER_TARGET x86_64-w64-mingw32)
+
+set(CMAKE_RC_COMPILER ${LLVM_MINGW_PATH}/bin/llvm-rc)
+set(CMAKE_AR ${LLVM_MINGW_PATH}/bin/llvm-ar)
+set(CMAKE_RANLIB ${LLVM_MINGW_PATH}/bin/llvm-ranlib)
+set(CMAKE_LINKER ${LLVM_MINGW_PATH}/bin/lld)
+
+set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW_PATH})
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+]]
+end
+
+function M.get_toolchain_aarch64_windows()
+	return [[set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR arm64)
+
+if(DEFINED ENV{LLVM_MINGW_SUFFIX})
+    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
+else()
+    set(LLVM_SUFFIX "x86_64")
+endif()
+
+set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
+set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
+
+set(CMAKE_C_COMPILER_TARGET aarch64-w64-mingw32)
+set(CMAKE_CXX_COMPILER_TARGET aarch64-w64-mingw32)
+
+set(CMAKE_RC_COMPILER ${LLVM_MINGW_PATH}/bin/llvm-rc)
+set(CMAKE_AR ${LLVM_MINGW_PATH}/bin/llvm-ar)
+set(CMAKE_RANLIB ${LLVM_MINGW_PATH}/bin/llvm-ranlib)
+set(CMAKE_LINKER ${LLVM_MINGW_PATH}/bin/lld)
+
+set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW_PATH})
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+]]
+end
+
+function M.get_start_devcontainer_script()
+	return [[docker build -t devcontainer .
+docker run -it --rm -v $(pwd):/workspace -w /workspace devcontainer
+    ]]
+end
+
+function M.get_cross_compile_in_devcontainer_script()
+	return [[mkdir -p build/linux-x86_64
+cd build/linux-x86_64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -G Ninja
+ninja
+cd ../..
+
+mkdir -p build/linux-arm64
+cd build/linux-arm64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -G Ninja
+ninja
+cd ../..
+
+mkdir -p build/windows-x86_64
+cd build/windows-x86_64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -G Ninja
+ninja
+cd ../..
+
+mkdir -p build/windows-arm64
+cd build/windows-arm64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -G Ninja
+ninja
+cd ../..
+    ]]
+end
+
 return M
