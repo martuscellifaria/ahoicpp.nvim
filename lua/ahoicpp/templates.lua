@@ -656,6 +656,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static -fuse-ld=lld")
+set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -static")
+set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingwex -lmsvcrt -lucrt")
 ]]
 end
 
@@ -701,6 +705,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static -fuse-ld=lld")
+set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -static")
+set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingwex -lmsvcrt -lucrt")
 ]]
 end
 
