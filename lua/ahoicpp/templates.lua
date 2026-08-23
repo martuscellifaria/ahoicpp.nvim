@@ -566,8 +566,15 @@ function M.get_toolchain_x86_64_linux()
 	return [[set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-set(CMAKE_C_COMPILER x86_64-linux-gnu-gcc-16)
-set(CMAKE_CXX_COMPILER x86_64-linux-gnu-g++-16)
+find_program(CROSS_GCC x86_64-linux-gnu-gcc-16)
+find_program(CROSS_GXX x86_64-linux-gnu-g++-16)
+
+if(NOT CROSS_GCC OR NOT CROSS_GXX)
+    message(FATAL_ERROR "x86_64 Linux cross-compiler not found")
+endif()
+
+set(CMAKE_C_COMPILER ${CROSS_GCC})
+set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -585,8 +592,15 @@ function M.get_toolchain_aarch64_linux()
 	return [[set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
-set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc-16)
-set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++-16)
+find_program(CROSS_GCC aarch64-linux-gnu-gcc-16)
+find_program(CROSS_GXX aarch64-linux-gnu-g++-16)
+
+if(NOT CROSS_GCC OR NOT CROSS_GXX)
+    message(FATAL_ERROR "ARM64 Linux cross-compiler not found")
+endif()
+
+set(CMAKE_C_COMPILER ${CROSS_GCC})
+set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -604,13 +618,23 @@ function M.get_toolchain_x86_64_windows()
 	return [[set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-if(DEFINED ENV{LLVM_MINGW_SUFFIX})
-    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
-else()
+execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE HOST_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(HOST_ARCH STREQUAL "x86_64")
     set(LLVM_SUFFIX "x86_64")
+else()
+    set(LLVM_SUFFIX "aarch64")
 endif()
 
 set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+if(NOT EXISTS "${LLVM_MINGW_PATH}/bin/clang")
+    message(FATAL_ERROR "llvm-mingw not found at ${LLVM_MINGW_PATH}")
+endif()
 
 set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
 set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
@@ -639,13 +663,23 @@ function M.get_toolchain_aarch64_windows()
 	return [[set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR arm64)
 
-if(DEFINED ENV{LLVM_MINGW_SUFFIX})
-    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
-else()
+execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE HOST_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(HOST_ARCH STREQUAL "x86_64")
     set(LLVM_SUFFIX "x86_64")
+else()
+    set(LLVM_SUFFIX "aarch64")
 endif()
 
 set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+if(NOT EXISTS "${LLVM_MINGW_PATH}/bin/clang")
+    message(FATAL_ERROR "llvm-mingw not found at ${LLVM_MINGW_PATH}")
+endif()
 
 set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
 set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
@@ -673,34 +707,34 @@ end
 function M.get_start_devcontainer_script()
 	return [[docker build -t devcontainer .
 docker run -it --rm -v $(pwd):/workspace -w /workspace devcontainer
-    ]]
+]]
 end
 
 function M.get_cross_compile_in_devcontainer_script()
 	return [[mkdir -p build/linux-x86_64
 cd build/linux-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -G Ninja
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
 mkdir -p build/linux-arm64
 cd build/linux-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -G Ninja
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
 mkdir -p build/windows-x86_64
 cd build/windows-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -G Ninja
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
 mkdir -p build/windows-arm64
 cd build/windows-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -G Ninja
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
-    ]]
+]]
 end
 
 return M
