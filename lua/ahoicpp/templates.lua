@@ -510,8 +510,15 @@ end
 function M.get_cross_compile_dockerfile_template()
 	return [[FROM ubuntu:26.04
 
-RUN apt-get update && apt-get install -y \
+ARG DEBIAN_FRONTEND=noninteractive
+ARG LLVM_MINGW_VERSION=20260616
+ARG LLVM_MINGW_UBUNTU=22.04
+
+ENV XWIN=/opt/xwin
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     cmake \
     ninja-build \
     git \
@@ -525,8 +532,18 @@ RUN apt-get update && apt-get install -y \
     clang \
     lld \
     llvm \
+    clang-tools \
+    cargo \
+    rustc \
+    libjpeg8 \
+    libwebp7 \
+    libwebpmux3 \
+    libwebpdemux2 \
+    libpng16-16 \
+    libtiff6 \
     unzip \
     wget \
+    curl \
     xz-utils \
     file \
     && rm -rf /var/lib/apt/lists/*
@@ -538,25 +555,42 @@ RUN ARCH=$(uname -m) && \
         x86_64|amd64) SUFFIX="x86_64" ;; \
         *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
     esac && \
-    echo "Downloading LLVM-mingw for $SUFFIX" && \
-    wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
-    tar -xf llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz -C /opt && \
-    rm llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
-    echo "${SUFFIX}" > /opt/llvm-mingw-arch.txt && \
-    echo "LLVM-mingw installed for architecture: $SUFFIX"
+
+    LLVM_MINGW_DIR="/opt/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}" && \
+    LLVM_MINGW_ARCHIVE="llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}.tar.xz" && \
+    wget -q "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/${LLVM_MINGW_ARCHIVE}" && \
+    tar -xf "${LLVM_MINGW_ARCHIVE}" -C /opt && \
+    rm "${LLVM_MINGW_ARCHIVE}" && \
+    printf '%s\n' "${SUFFIX}" > /opt/llvm-mingw-arch.txt && \
+    test -x "${LLVM_MINGW_DIR}/bin/clang++"
 
 RUN SUFFIX=$(cat /opt/llvm-mingw-arch.txt) && \
-    DIR="/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}" && \
-    echo "Creating wrappers from: $DIR" && \
-    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target x86_64-w64-mingw32 "$@"' > /usr/local/bin/mingw-clang++ && \
-    chmod +x /usr/local/bin/mingw-clang++ && \
-    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target aarch64-w64-mingw32 "$@"' > /usr/local/bin/mingw-arm64-clang++ && \
-    chmod +x /usr/local/bin/mingw-arm64-clang++
+    LLVM_MINGW_DIR="/opt/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-${LLVM_MINGW_UBUNTU}-${SUFFIX}" && \
+    printf '#!/usr/bin/env bash\nexec "%s/bin/clang++" --target=x86_64-w64-mingw32 "$@"\n' "${LLVM_MINGW_DIR}" > /usr/local/bin/mingw-clang++ && \
+    printf '#!/usr/bin/env bash\nexec "%s/bin/clang++" --target=aarch64-w64-mingw32 "$@"\n' "${LLVM_MINGW_DIR}" > /usr/local/bin/mingw-arm64-clang++ && \
+    chmod +x /usr/local/bin/mingw-clang++ /usr/local/bin/mingw-arm64-clang++
 
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-16 100 \
     && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-16 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-16 100
+
+RUN cargo install xwin --locked && \
+    rm -rf /opt/xwin /opt/.xwin-cache && \
+    cd /opt && \
+    xwin --accept-license splat --output /opt/xwin && \
+    test -f /opt/xwin/crt/include/vector && \
+    test -f /opt/xwin/crt/lib/x86_64/libcmt.lib && \
+    test -f /opt/xwin/crt/lib/x86_64/oldnames.lib && \
+    test -f /opt/xwin/sdk/lib/ucrt/x86_64/ucrt.lib && \
+    find /opt/xwin -iname 'msvcrt.lib' -print -quit | grep -q .
+
+RUN command -v clang-cl && \
+    command -v lld-link && \
+    command -v llvm-rc && \
+    clang-cl --version && \
+    lld-link --version && \
+    xwin --version
 
 CMD ["/bin/bash"]
 ]]
@@ -564,7 +598,7 @@ end
 
 function M.get_toolchain_x86_64_linux()
 	return [[set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(CMAKE_SYSTEM_PROCESSOR x86_64_linux)
 
 find_program(CROSS_GCC x86_64-linux-gnu-gcc-16)
 find_program(CROSS_GXX x86_64-linux-gnu-g++-16)
@@ -577,12 +611,13 @@ set(CMAKE_C_COMPILER ${CROSS_GCC})
 set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 
 set(CMAKE_CXX_STANDARD 23)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_FIND_ROOT_PATH /usr/x86_64-linux-gnu)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ]]
@@ -590,7 +625,7 @@ end
 
 function M.get_toolchain_aarch64_linux()
 	return [[set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_SYSTEM_PROCESSOR aarch64_linux)
 
 find_program(CROSS_GCC aarch64-linux-gnu-gcc-16)
 find_program(CROSS_GXX aarch64-linux-gnu-g++-16)
@@ -605,8 +640,7 @@ set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_FIND_ROOT_PATH /usr/aarch64-linux-gnu)
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libstdc++ -static-libgcc")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -618,48 +652,79 @@ function M.get_toolchain_x86_64_windows()
 	return [[set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-execute_process(
-    COMMAND uname -m
-    OUTPUT_VARIABLE HOST_ARCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+set(XWIN_ROOT "/opt/xwin")
+set(LLVM_ROOT "/usr/lib/llvm-21")
+set(TARGET_TRIPLE "x86_64-pc-windows-msvc")
 
-if(HOST_ARCH STREQUAL "x86_64")
-    set(LLVM_SUFFIX "x86_64")
-else()
-    set(LLVM_SUFFIX "aarch64")
+set(XWIN_CRT_INCLUDE "${XWIN_ROOT}/crt/include")
+set(XWIN_CRT_LIB "${XWIN_ROOT}/crt/lib/x86_64")
+
+set(XWIN_SDK_INCLUDE "${XWIN_ROOT}/sdk/include")
+set(XWIN_SDK_LIB "${XWIN_ROOT}/sdk/lib")
+
+set(XWIN_SDK_UCRT_INCLUDE "${XWIN_SDK_INCLUDE}/ucrt")
+set(XWIN_SDK_SHARED_INCLUDE "${XWIN_SDK_INCLUDE}/shared")
+set(XWIN_SDK_UM_INCLUDE "${XWIN_SDK_INCLUDE}/um")
+set(XWIN_SDK_WINRT_INCLUDE "${XWIN_SDK_INCLUDE}/winrt")
+set(XWIN_SDK_CPPWINRT_INCLUDE "${XWIN_SDK_INCLUDE}/cppwinrt")
+
+set(XWIN_SDK_UCRT_LIB "${XWIN_SDK_LIB}/ucrt/x86_64")
+set(XWIN_SDK_UM_LIB "${XWIN_SDK_LIB}/um/x86_64")
+
+if(NOT EXISTS "${XWIN_CRT_INCLUDE}/vector")
+    message(FATAL_ERROR "xwin C++ headers not found: ${XWIN_CRT_INCLUDE}")
 endif()
 
-set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
-
-if(NOT EXISTS "${LLVM_MINGW_PATH}/bin/clang")
-    message(FATAL_ERROR "llvm-mingw not found at ${LLVM_MINGW_PATH}")
+if(NOT EXISTS "${XWIN_SDK_UM_INCLUDE}/windows.h")
+    message(FATAL_ERROR "Windows SDK headers not found: ${XWIN_SDK_UM_INCLUDE}")
 endif()
 
-set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
-set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
+if(NOT EXISTS "${XWIN_CRT_LIB}/libcmt.lib")
+    message(FATAL_ERROR "xwin CRT libraries not found: ${XWIN_CRT_LIB}")
+endif()
 
-set(CMAKE_C_COMPILER_TARGET x86_64-w64-mingw32)
-set(CMAKE_CXX_COMPILER_TARGET x86_64-w64-mingw32)
+if(NOT EXISTS "${XWIN_CRT_LIB}/oldnames.lib")
+    message(FATAL_ERROR "xwin oldnames.lib not found: ${XWIN_CRT_LIB}")
+endif()
 
-set(CMAKE_RC_COMPILER ${LLVM_MINGW_PATH}/bin/llvm-rc)
-set(CMAKE_AR ${LLVM_MINGW_PATH}/bin/llvm-ar)
-set(CMAKE_RANLIB ${LLVM_MINGW_PATH}/bin/llvm-ranlib)
-set(CMAKE_LINKER ${LLVM_MINGW_PATH}/bin/lld)
+if(NOT EXISTS "${LLVM_ROOT}/bin/clang-cl")
+    message(FATAL_ERROR "clang-cl not found: ${LLVM_ROOT}/bin/clang-cl")
+endif()
 
-set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW_PATH})
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+if(NOT EXISTS "${LLVM_ROOT}/bin/lld-link")
+    message(FATAL_ERROR "lld-link not found: ${LLVM_ROOT}/bin/lld-link")
+endif()
+
+set(CMAKE_C_COMPILER "${LLVM_ROOT}/bin/clang-cl")
+set(CMAKE_CXX_COMPILER "${LLVM_ROOT}/bin/clang-cl")
+set(CMAKE_LINKER "${LLVM_ROOT}/bin/lld-link")
+
+set(CMAKE_C_COMPILER_TARGET "${TARGET_TRIPLE}")
+set(CMAKE_CXX_COMPILER_TARGET "${TARGET_TRIPLE}")
+
+set(CMAKE_RC_COMPILER "${LLVM_ROOT}/bin/llvm-rc")
+set(CMAKE_AR "${LLVM_ROOT}/bin/llvm-lib")
+set(CMAKE_C_COMPILER_AR "${LLVM_ROOT}/bin/llvm-lib")
+set(CMAKE_CXX_COMPILER_AR "${LLVM_ROOT}/bin/llvm-lib")
+
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+
+set(CMAKE_C_FLAGS_INIT "/imsvc ${XWIN_CRT_INCLUDE} /imsvc ${XWIN_SDK_UCRT_INCLUDE} /imsvc ${XWIN_SDK_SHARED_INCLUDE} /imsvc ${XWIN_SDK_UM_INCLUDE} /imsvc ${XWIN_SDK_WINRT_INCLUDE} /imsvc ${XWIN_SDK_CPPWINRT_INCLUDE}")
+
+set(CMAKE_CXX_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -clang:-Wno-error=character-conversion")
+set(CMAKE_RC_FLAGS_INIT "-I${XWIN_CRT_INCLUDE} -I${XWIN_SDK_UCRT_INCLUDE} -I${XWIN_SDK_SHARED_INCLUDE} -I${XWIN_SDK_UM_INCLUDE} -I${XWIN_SDK_WINRT_INCLUDE} -I${XWIN_SDK_CPPWINRT_INCLUDE}")
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld-link /libpath:${XWIN_CRT_LIB} /libpath:${XWIN_SDK_UCRT_LIB} /libpath:${XWIN_SDK_UM_LIB}")
+
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
+set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-static -fuse-ld=lld")
-set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -static")
-set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingwex -lmsvcrt -lucrt")
 ]]
 end
 

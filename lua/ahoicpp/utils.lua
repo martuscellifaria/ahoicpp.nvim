@@ -94,6 +94,7 @@ function M.get_directories()
 				and not name:match("^%.")
 				and name ~= "App"
 				and name ~= "build"
+				and name ~= "cmake"
 				and name ~= "externals"
 			then
 				table.insert(dirs, name)
