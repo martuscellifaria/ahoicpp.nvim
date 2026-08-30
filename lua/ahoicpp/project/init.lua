@@ -79,22 +79,23 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
 	fs.create_dir("." .. sep .. "cmake")
 	fs.write_file("." .. sep .. "Dockerfile", templates.get_cross_compile_dockerfile_template())
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake",
-		templates.get_toolchain_x86_64_linux()
-	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake",
-		templates.get_toolchain_aarch64_linux()
-	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake",
-		templates.get_toolchain_x86_64_windows()
-	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake",
-		templates.get_toolchain_aarch64_windows()
-	)
+
+	cmake_template = templates.get_toolchain_x86_64_linux()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_aarch64_linux()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_x86_64_windows()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_aarch64_windows()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake", cmake_template)
+
 	fs.write_file("." .. sep .. "start_devcontainer.sh", templates.get_start_devcontainer_script())
 	fs.write_file(
 		"." .. sep .. "cross_compile_in_devcontainer.sh",

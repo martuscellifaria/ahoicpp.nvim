@@ -128,4 +128,15 @@ function M.execute_compiled_binary()
 	end
 end
 
+function M.start_devcontainer()
+	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+		vim.notify("Cannot run sh files on Windows. This feature needs at least WSL2.", vim.log.levels.WARN)
+		return
+	end
+	if utils.file_exists("start_devcontainer.sh") then
+		vim.cmd("terminal sh start_devcontainer.sh")
+		vim.cmd("startinsert")
+	end
+end
+
 return M

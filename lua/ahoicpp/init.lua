@@ -1,6 +1,5 @@
 local config = require("ahoicpp.config")
 local ui = require("ahoicpp.ui")
-local project = require("ahoicpp.project")
 local build = require("ahoicpp.build")
 
 local M = {}

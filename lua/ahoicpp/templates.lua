@@ -556,7 +556,6 @@ RUN ARCH=$(uname -m) && \
         x86_64|amd64) SUFFIX="x86_64" ;; \
         *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
     esac && \
-
     LLVM_MINGW_DIR="/opt/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}" && \
     LLVM_MINGW_ARCHIVE="llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}.tar.xz" && \
     wget -q "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/${LLVM_MINGW_ARCHIVE}" && \
@@ -611,7 +610,7 @@ endif()
 set(CMAKE_C_COMPILER ${CROSS_GCC})
 set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -638,7 +637,7 @@ endif()
 set(CMAKE_C_COMPILER ${CROSS_GCC})
 set(CMAKE_CXX_COMPILER ${CROSS_GXX})
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libstdc++ -static-libgcc")
@@ -723,7 +722,7 @@ set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld-link /libpath:${XWIN_CRT_LIB} /lib
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
 set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 ]]
@@ -768,7 +767,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -779,35 +778,32 @@ set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingw
 end
 
 function M.get_start_devcontainer_script()
-	return [[docker build -t devcontainer .
-docker run -it --rm -v $(pwd):/workspace -w /workspace devcontainer
+	return [[if [ -f /.dockerenv ]; then
+    echo "You are already in a Docker container. Aborting."
+    exit 1
+fi
+
+docker build -t devcontainer .
+docker run -it --rm -v $(pwd):/workspace -w /workspace --user $(id -u):$(id -g) devcontainer
 ]]
 end
 
 function M.get_cross_compile_in_devcontainer_script()
-	return [[mkdir -p cross-build/linux-x86_64
-cd cross-build/linux-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
-ninja
-cd ../..
+	return [[if [ ! -f /.dockerenv ]; then
+    echo "You are not in a Docker container. Aborting."
+    exit 1
+fi
 
-mkdir -p cross-build/linux-arm64
-cd cross-build/linux-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
-ninja
-cd ../..
-
-mkdir -p cross-build/windows-x86_64
-cd cross-build/windows-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
-ninja
-cd ../..
-
-mkdir -p cross-build/windows-arm64
-cd cross-build/windows-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
-ninja
-cd ../..
+for config in "linux-x86_64:toolchain-x86_64-linux.cmake" "linux-arm64:toolchain-aarch64-linux.cmake" "windows-x86_64:toolchain-windows-x86_64.cmake" "windows-arm64:toolchain-windows-arm64.cmake"; do
+    build_dir="${config%%:*}"
+    toolchain_file="${config##*:}"
+    echo "Building ${build_dir}..."
+    mkdir -p "cross-build/${build_dir}" || exit 1
+    cd "cross-build/${build_dir}" || exit 1
+    cmake ../.. -DCMAKE_TOOLCHAIN_FILE="../../cmake/${toolchain_file}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja || exit 1
+    ninja > build.log 2>&1
+    cd ../.. || exit 1
+done
 ]]
 end
 
