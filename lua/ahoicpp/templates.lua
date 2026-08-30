@@ -431,6 +431,7 @@ end
 
 function M.get_gitignore()
 	return [[build/
+cross-build/
 compile_commands.json
 
 .vscode/
@@ -784,27 +785,27 @@ docker run -it --rm -v $(pwd):/workspace -w /workspace devcontainer
 end
 
 function M.get_cross_compile_in_devcontainer_script()
-	return [[mkdir -p build/linux-x86_64
-cd build/linux-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+	return [[mkdir -p cross-build/linux-x86_64
+cd cross-build/linux-x86_64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
-mkdir -p build/linux-arm64
-cd build/linux-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+mkdir -p cross-build/linux-arm64
+cd cross-build/linux-arm64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
-mkdir -p build/windows-x86_64
-cd build/windows-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+mkdir -p cross-build/windows-x86_64
+cd cross-build/windows-x86_64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 
-mkdir -p build/windows-arm64
-cd build/windows-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+mkdir -p cross-build/windows-arm64
+cd cross-build/windows-arm64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
 ninja
 cd ../..
 ]]
