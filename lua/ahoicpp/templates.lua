@@ -131,6 +131,59 @@ even creates a python script for building your project.";
 ]]
 end
 
+function M.get_main_template_qt()
+	return [[#include "version.h"
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/file.h>
+    #include <unistd.h>
+    #include <cerrno>
+#endif
+
+extern const char* embedded_version;
+
+int main(int argc, char *argv[]) {
+    QGuiApplication app(argc, argv);
+
+    QQmlApplicationEngine engine;
+    QObject::connect(
+        &engine, &QQmlApplicationEngine::objectCreationFailed,
+        &app, []() { QCoreApplication::exit(-1); },
+        Qt::QueuedConnection);
+
+    engine.loadFromModule("{{PROJECT_NAME}}Qml", "Main");
+
+    return app.exec();
+}
+    ]]
+end
+
+function M.get_main_qml_template_qt()
+	return [[import QtQuick
+import QtQuick.Controls
+
+ApplicationWindow {
+    visible: true
+    width: 400
+    height: 200
+    title: "{{PROJECT_NAME}}"
+
+    Label {
+        anchors.centerIn: parent
+        text: "AhoiCpp is a tool for setting a C++ development environment in Neovim.\n\
+\nC++ is a challenging language, specially for newcomers.\n\
+This is my take on making it easier to hop along.\n\
+\nAhoiCpp can set up classes, cmake files, app entrypoints and\n\
+even creates a python script for building your project.";
+        font.pixelSize: 12
+    }
+}]]
+end
+
 function M.get_parent_cmake_template()
 	return [[cmake_minimum_required(VERSION 3.28)
 
@@ -198,10 +251,79 @@ configure_file(
 add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries({{PROJECT_NAME}} ahoicpp_externals)
-target_link_libraries({{PROJECT_NAME}} ahoicpp_externals ${AHOICPP_EXTERNALS_TARGETS})
-target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 include(AhoiCppSubdirs.cmake)
+
+add_library(ahoicpp_externals_iface INTERFACE)
+target_link_libraries(ahoicpp_externals_iface INTERFACE ahoicpp_externals)
+target_link_libraries(ahoicpp_externals_iface INTERFACE ${AHOICPP_EXTERNALS_TARGETS})
+target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
+
+target_link_libraries({{PROJECT_NAME}} PRIVATE
+    ahoicpp_externals_iface
+)
+
+if(WIN32)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc
+        @ONLY
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.rc)
+else()
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.c
+        @ONLY
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)
+endif()
+]]
+end
+
+function M.get_app_cmake_template_qt()
+	return [[cmake_minimum_required(VERSION 3.28)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h
+    @ONLY
+)
+
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
+qt_standard_project_setup()
+
+qt_add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
+target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+file(GLOB_RECURSE PROJECT_QML_FILES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/qml/*.qml
+)
+
+foreach(f IN LISTS PROJECT_QML_FILES)
+    file(RELATIVE_PATH _rel "${CMAKE_CURRENT_SOURCE_DIR}" "${f}")
+    set_source_files_properties("${f}" PROPERTIES
+        QT_RESOURCE_ALIAS "${_rel}")
+endforeach()
+
+qt_add_qml_module(
+    {{PROJECT_NAME}}
+    URI {{PROJECT_NAME}}Qml
+    VERSION 1.0
+    QML_FILES ${PROJECT_QML_FILES}
+)
+
+include(AhoiCppSubdirs.cmake)
+
+add_library(ahoicpp_externals_interface INTERFACE)
+target_link_libraries(ahoicpp_externals_interface INTERFACE ahoicpp_externals)
+target_link_libraries(ahoicpp_externals_interface INTERFACE ${AHOICPP_EXTERNALS_TARGETS})
+
+target_link_libraries({{PROJECT_NAME}} PRIVATE
+    ahoicpp_externals_interface
+    Qt6::Quick
+)
+
+target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 
 if(WIN32)
     configure_file(

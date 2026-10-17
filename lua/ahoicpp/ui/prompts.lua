@@ -86,41 +86,62 @@ end
 
 function M.create_main_input()
 	local sep = package.config:sub(1, 1)
+	M.use_qt = false
 	local function proceed()
 		create_prompt_dialog("AhoiCpp Add Main", "App Name: ", function(input)
 			if input and utils.is_valid_class_name(input) then
-				project.create_main(input)
+				project.create_main(input, M.use_qt)
 			else
 				vim.notify("Invalid C++ file/class name provided.", vim.log.levels.WARN)
 			end
 		end)
 	end
 
-	if utils.file_exists("." .. sep .. "ahoicpp_project.json") then
-		if utils.dir_exists("." .. sep .. "App") then
-			vim.notify(
-				"You appear to have a main app already. Please check your project structure.",
-				vim.log.levels.WARN
-			)
-			return
-		end
-		proceed()
-	else
-		local directories = utils.get_directories()
-		if #directories > 0 then
-			dialogs.create_yes_no_dialog({
-				"",
-				"This directory contains a few subdirectories, and appear not to be an AhoiCpp project.",
-				"Are you sure you want to start a project here?",
-				"",
-			}, function(confirmed)
-				if confirmed then
-					proceed()
-				end
-			end)
-		else
+	local function check_and_proceed()
+		if utils.file_exists("." .. sep .. "ahoicpp_project.json") then
+			if utils.dir_exists("." .. sep .. "App") then
+				vim.notify(
+					"You appear to have a main app already. Please check your project structure.",
+					vim.log.levels.WARN
+				)
+				return
+			end
 			proceed()
+		else
+			local directories = utils.get_directories()
+			if #directories > 0 then
+				dialogs.create_yes_no_dialog({
+					"",
+					"This directory contains a few subdirectories, and appear not to be an AhoiCpp project.",
+					"Are you sure you want to start a project here?",
+					"",
+				}, function(confirmed)
+					if confirmed then
+						proceed()
+					end
+				end)
+			else
+				proceed()
+			end
 		end
+	end
+
+	M.use_qt = false
+
+	if vim.fn.executable("qmake6") == 1 or vim.fn.executable("qtpaths6") == 1 then
+		dialogs.create_yes_no_dialog({
+			"",
+			"Qt6 was found on your system.",
+			"Do you want to create a Qt app instead of a console app?",
+			"",
+		}, function(confirmed)
+			if confirmed ~= nil then
+				M.use_qt = confirmed
+				check_and_proceed()
+			end
+		end)
+	else
+		check_and_proceed()
 	end
 end
 

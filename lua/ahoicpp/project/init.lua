@@ -23,7 +23,7 @@ function M.create_class(class_name, output_dir)
 	end
 end
 
-function M.create_main(main_name)
+function M.create_main(main_name, use_qt)
 	local sep = package.config:sub(1, 1)
 	local app_path = "." .. sep .. "App" .. sep .. "src"
 	fs.create_dir(app_path)
@@ -47,7 +47,19 @@ function M.create_main(main_name)
 		cpp_version = 23
 	end
 	local main_path = app_path .. sep .. main_name .. ".cpp"
-	fs.write_file(main_path, templates.get_main_template(cpp_version))
+	if use_qt then
+		local qt_main_file = templates.get_main_template_qt()
+		qt_main_file = qt_main_file:gsub("{{PROJECT_NAME}}", main_name)
+		fs.write_file(main_path, qt_main_file)
+		local qml_path = "." .. sep .. "App" .. sep .. "qml"
+		fs.create_dir(qml_path)
+		local qml_main_path = qml_path .. sep .. "Main.qml"
+		local main_qml_file = templates.get_main_qml_template_qt()
+		main_qml_file = main_qml_file:gsub("{{PROJECT_NAME}}", main_name)
+		fs.write_file(qml_main_path, main_qml_file)
+	else
+		fs.write_file(main_path, templates.get_main_template(cpp_version))
+	end
 	vim.cmd("edit " .. main_path)
 
 	fs.write_file("." .. sep .. "App" .. sep .. "version.c.in", templates.get_version_c_in())
@@ -58,7 +70,7 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. ".clangd", templates.get_clangd_template())
 	fs.write_file(
 		"." .. sep .. "AhoiCppProject.cmake",
-		"#Created automagically by AhoiCpp. Please do not modify this file."
+		"# Created automagically by AhoiCpp. Please do not modify this file."
 	)
 
 	local cmake_template = templates.get_parent_cmake_template()
@@ -67,11 +79,15 @@ function M.create_main(main_name)
 
 	fs.write_file(
 		"." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake",
-		"#Created automagically by AhoiCpp. Please do not modify this file."
+		"# Created automagically by AhoiCpp. Please do not modify this file."
 	)
 	fs.write_file("." .. sep .. "AhoiCppExternals.cmake", templates.get_ahoi_externals_template())
 
-	cmake_template = templates.get_app_cmake_template()
+	if use_qt then
+		cmake_template = templates.get_app_cmake_template_qt()
+	else
+		cmake_template = templates.get_app_cmake_template()
+	end
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	fs.write_file("." .. sep .. "App" .. sep .. "CMakeLists.txt", cmake_template)
@@ -236,10 +252,8 @@ function M.create_module(module_name, parent_directory_name)
 	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") then
 		local subdirs_text = fs.read_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake")
 		if subdirs_text then
-			if
-				not string.find(subdirs_text, "target_link_libraries(${PROJECT_NAME} " .. module_name .. ")", 1, true)
-			then
-				subdirs_text = subdirs_text .. "\ntarget_link_libraries(${PROJECT_NAME} " .. module_name .. ")"
+			if not string.find(subdirs_text, "target_link_libraries(" .. module_name .. ")", 1, true) then
+				subdirs_text = subdirs_text .. "\ntarget_link_libraries(" .. module_name .. ")"
 				fs.update_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake", subdirs_text)
 			end
 		end
