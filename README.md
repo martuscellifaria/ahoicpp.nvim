@@ -4,7 +4,7 @@
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-blue.svg?logo=neovim)](https://neovim.io/)
 [![LuaRocks](https://img.shields.io/luarocks/v/martuscellifaria/ahoicpp.nvim?logo=lua&color=blue)](https://luarocks.org/modules/martuscellifaria/ahoicpp.nvim)
 
-Ahoi Labs presents `AhoiCpp`.
+AhoiTools presents `AhoiCpp`.
 
 AhoiCpp is a way to start cross-platform C++ projects in Neovim.
 AhoiCpp lets you create classes, libraries and your own app entrypoint with the respective build process.

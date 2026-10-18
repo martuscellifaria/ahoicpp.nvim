@@ -24,8 +24,8 @@ function M.compile()
 	local project_data
 	local json_data
 	local version = "99.99.99"
-	local company = "Ahoi Labs"
-	local descripton = "Your project is owned by Ahoi Labs."
+	local company = "AhoiTools"
+	local descripton = "Your project is owned by AhoiTools."
 	if utils.file_exists("ahoicpp_project.json") then
 		project_data = utils.read_file("ahoicpp_project.json")
 		if project_data and project_data ~= "" then

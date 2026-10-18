@@ -195,12 +195,12 @@ endif()
 if(DEFINED COMPANY_ARG)
 	set(PROJECT_COMPANY ${COMPANY_ARG})
 else()
-	set(PROJECT_COMPANY "Ahoi Labs") 
+	set(PROJECT_COMPANY "AhoiTools") 
 endif()
 if(DEFINED DESCRIPTION_ARG)
 	set(PROJECT_DESCRIPTION ${DESCRIPTION_ARG})
 else()
-	set(PROJECT_DESCRIPTION "Your project is owned by Ahoi Labs") 
+	set(PROJECT_DESCRIPTION "Your project is owned by AhoiTools") 
 endif()
 
 project({{PROJECT_NAME}} VERSION ${PROJECT_VERSION})
@@ -462,15 +462,15 @@ if __name__ == '__main__':
                 print("Invalid input. Bye.")
     elif (sys.argv[1] == "debug"):
         version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
-        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        company = sys.argv[3] if len(sys.argv) > 3 else "AhoiTools"
         description = sys.argv[4] if len(
-            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+            sys.argv) > 4 else "Your project is owned by AhoiTools."
         run_app("RelWithDebInfo", version, company, description)
     else:
         version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
-        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        company = sys.argv[3] if len(sys.argv) > 3 else "AhoiTools"
         description = sys.argv[4] if len(
-            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+            sys.argv) > 4 else "Your project is owned by AhoiTools."
         run_app("Release", version, company, description)
 ]]
 end
@@ -625,8 +625,8 @@ function M.get_project_json_template()
 	"execution_path": "./build/App/",
 	"build_as": "release",
 	"version": "99.99.99",
-	"company": "Ahoi Labs",
-	"description": "Your project is owned by Ahoi Labs"
+	"company": "AhoiTools",
+	"description": "Your project is owned by AhoiTools"
 }]]
 end
 
