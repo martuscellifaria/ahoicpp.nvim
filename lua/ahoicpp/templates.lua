@@ -32,6 +32,42 @@ function M.get_cpp_template()
 ]]
 end
 
+function M.get_header_template_with_qt6()
+	return [[#pragma once
+
+#include <QObject>
+
+class {{MODULE_NAME}} : public QObject {
+    Q_OBJECT
+public:
+    explicit {{MODULE_NAME}}(QObject* parent = nullptr);
+
+    /* Rule of five: if you need one, better add all! */
+    /* Destructor, copy constructor, copy assignment, move constructor, move assignment. */
+    // ~{{MODULE_NAME}}() = default;
+    // {{MODULE_NAME}}(const {{MODULE_NAME}}&) = default;
+    // {{MODULE_NAME}}& operator=(const {{MODULE_NAME}}&) = default;
+    // {{MODULE_NAME}}({{MODULE_NAME}}&&) noexcept = default;
+    // {{MODULE_NAME}}& operator=({{MODULE_NAME}}&&) noexcept = default;
+
+
+private:
+
+};]]
+end
+
+function M.get_cpp_template_with_qt6()
+	return [[#include "{{MODULE_NAME}}.h"
+
+
+{{MODULE_NAME}}::{{MODULE_NAME}}(QObject* parent)
+    : QObject(parent) {
+}
+
+
+]]
+end
+
 function M.get_test_cpp_template()
 	return [[#include "{{MODULE_NAME}}.h"
 #include <gtest/gtest.h>
@@ -135,6 +171,9 @@ function M.get_main_template_qt()
 	return [[#include "version.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QObject>
+#include <QString>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -146,42 +185,320 @@ function M.get_main_template_qt()
 
 extern const char* embedded_version;
 
-int main(int argc, char *argv[]) {
+class app_controller : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(bool text_visible
+               READ text_visible
+               WRITE set_text_visible
+               NOTIFY text_visible_changed)
+    Q_PROPERTY(QString headline
+               READ headline
+               CONSTANT)
+    Q_PROPERTY(QString body
+               READ body
+               CONSTANT)
+
+public:
+    explicit app_controller(QObject* parent = nullptr) : QObject(parent) {}
+
+    bool text_visible() const {
+        return text_visible_;
+    }
+
+    void set_text_visible(bool visible) {
+        if (visible == text_visible_) {
+            return;
+        }
+        text_visible_ = visible;
+        emit text_visible_changed();
+    }
+
+    QString headline() const {
+        return QStringLiteral(
+            "AhoiCpp is a tool for setting a C++ development environment in Neovim.");
+    }
+
+    QString body() const {
+        return QStringLiteral(
+            "C++ is a challenging language, specially for newcomers.\n"
+            "This is my take on making it easier to hop along.\n"
+            "\n"
+            "AhoiCpp can set up classes, cmake files, app entrypoints and\n"
+            "even creates a python script for building your project.");
+    }
+
+public slots:
+    void toggle_text() {
+        set_text_visible(!text_visible_);
+    }
+
+    void clear_text() {
+        set_text_visible(false);
+    }
+
+    void quit() {
+        QCoreApplication::quit();
+    }
+
+signals:
+    void text_visible_changed();
+
+private:
+    bool text_visible_ = false;
+};
+
+#include "{{PROJECT_NAME}}.moc"
+
+int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
 
+    app_controller controller;
+
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("app", &controller);
+
     QObject::connect(
-        &engine, &QQmlApplicationEngine::objectCreationFailed,
-        &app, []() { QCoreApplication::exit(-1); },
+        &engine,
+        &QQmlApplicationEngine::objectCreationFailed,
+        &app,
+        []() {
+            QCoreApplication::exit(-1);
+        },
         Qt::QueuedConnection);
 
     engine.loadFromModule("{{PROJECT_NAME}}Qml", "Main");
 
     return app.exec();
 }
-    ]]
+]]
 end
 
 function M.get_main_qml_template_qt()
 	return [[import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 ApplicationWindow {
+    id: window
     visible: true
-    width: 400
-    height: 200
+    width: 900
+    height: 640
     title: "{{PROJECT_NAME}}"
+    color: "#1a1b26"
 
-    Label {
-        anchors.centerIn: parent
-        text: "AhoiCpp is a tool for setting a C++ development environment in Neovim.\n\
-\nC++ is a challenging language, specially for newcomers.\n\
-This is my take on making it easier to hop along.\n\
-\nAhoiCpp can set up classes, cmake files, app entrypoints and\n\
-even creates a python script for building your project.";
-        font.pixelSize: 12
+    readonly property color bg:           "#1a1b26"
+    readonly property color bg_soft:      "#1f2335"
+    readonly property color fg:           "#c0caf5"
+    readonly property color fg_dim:       "#a9b1d6"
+    readonly property color comment:      "#565f89"
+    readonly property color pastel_blue:  "#7aa2f7"
+    readonly property color pastel_pink:  "#f7768e"
+    readonly property color pastel_purple:"#bb9af7"
+    readonly property color pastel_cyan:  "#7dcfff"
+    readonly property color pastel_green: "#9ece6a"
+
+    readonly property bool text_visible: app.text_visible
+
+    background: Rectangle {
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#1a1b26" }
+            GradientStop { position: 0.5; color: "#1f2335" }
+            GradientStop { position: 1.0; color: "#1a1b26" }
+        }
     }
-}]]
+
+    Rectangle {
+        width: 420; height: 420; radius: 210
+        x: -140; y: -140
+        color: window.pastel_purple
+        opacity: 0.10
+    }
+    Rectangle {
+        width: 360; height: 360; radius: 180
+        x: window.width - 220
+        y: window.height - 240
+        color: window.pastel_pink
+        opacity: 0.08
+    }
+
+    ColumnLayout {
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 96, 640)
+        spacing: 28
+
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            width: 72; height: 24; radius: 12
+            color: window.bg_soft
+            border.color: Qt.rgba(0.34, 0.37, 0.54, 0.4)
+            border.width: 1
+
+            RowLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                Repeater {
+                    model: [window.pastel_pink, "#e0af68", window.pastel_green]
+                    Rectangle {
+                        width: 8; height: 8; radius: 4
+                        color: modelData
+                        opacity: 0.85
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: text_col.implicitHeight + 56
+            Layout.preferredHeight: window.text_visible ? implicitHeight : 0
+            radius: 16
+            color: window.bg_soft
+            border.color: Qt.rgba(0.34, 0.37, 0.54, 0.35)
+            border.width: 1
+            visible: window.text_visible || opacity > 0.0
+            opacity: window.text_visible ? 1.0 : 0.0
+            clip: true
+            Behavior on opacity { NumberAnimation { duration: 220 } }
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.margins: 1
+                height: 1
+                radius: parent.radius
+                color: Qt.rgba(0.75, 0.79, 0.96, 0.06)
+            }
+
+            ColumnLayout {
+                id: text_col
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.margins: 28
+                spacing: 14
+
+                Text {
+                    Layout.fillWidth: true
+                    text: app.headline
+                    color: window.fg
+                    font.pixelSize: 17
+                    font.family: "JetBrains Mono"
+                    wrapMode: Text.WordWrap
+                    lineHeight: 1.4
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Qt.rgba(0.34, 0.37, 0.54, 0.35)
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: app.body
+                    color: window.fg_dim
+                    font.pixelSize: 15
+                    font.family: "JetBrains Mono"
+                    wrapMode: Text.WordWrap
+                    lineHeight: 1.5
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 14
+
+            Button {
+                id: toggle_btn
+                implicitWidth: 160
+                implicitHeight: 44
+                text: window.text_visible ? "Clear" : "Click Me"
+
+                contentItem: Text {
+                    text: toggle_btn.text
+                    color: window.text_visible ? window.pastel_cyan : "#1a1b26"
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    font.family: "JetBrains Mono"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                background: Rectangle {
+                    radius: 10
+
+                    gradient: window.text_visible ? null : gradient_primary
+                    color: window.text_visible
+                           ? (toggle_btn.pressed
+                                ? Qt.rgba(0.49, 0.81, 1.0, 0.12)
+                                : toggle_btn.hovered
+                                  ? Qt.rgba(0.49, 0.81, 1.0, 0.07)
+                                  : "transparent")
+                           : "transparent"
+
+                    border.color: window.text_visible
+                                  ? Qt.rgba(0.49, 0.81, 1.0,
+                                            toggle_btn.hovered ? 0.55 : 0.30)
+                                  : "transparent"
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    Gradient {
+                        id: gradient_primary
+                        GradientStop { position: 0.0; color: window.pastel_blue }
+                        GradientStop { position: 1.0; color: window.pastel_purple }
+                    }
+                }
+
+                onClicked: {
+                    if (window.text_visible) {
+                        app.clear_text()
+                    } else {
+                        app.toggle_text()
+                    }
+                }
+            }
+
+            Button {
+                id: close_btn
+                text: "Close"
+                implicitWidth: 120
+                implicitHeight: 44
+
+                contentItem: Text {
+                    text: close_btn.text
+                    color: window.pastel_pink
+                    font.pixelSize: 14
+                    font.weight: Font.Medium
+                    font.family: "JetBrains Mono"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                background: Rectangle {
+                    radius: 10
+                    color: close_btn.pressed
+                           ? Qt.rgba(1.0, 0.46, 0.56, 0.14)
+                           : close_btn.hovered
+                             ? Qt.rgba(1.0, 0.46, 0.56, 0.08)
+                             : "transparent"
+                    border.color: Qt.rgba(1.0, 0.46, 0.56,
+                                          close_btn.hovered ? 0.6 : 0.35)
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                }
+
+                onClicked: app.quit()
+            }
+        }
+    }
+}
+]]
 end
 
 function M.get_parent_cmake_template()
@@ -346,6 +663,17 @@ end
 function M.get_module_cmake_template()
 	return [[add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
 target_link_libraries({{MODULE_NAME}} ahoicpp_externals)
+target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
+target_include_directories({{MODULE_NAME}} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}})
+]]
+end
+
+function M.get_module_cmake_template_with_qt6()
+	return [[find_package(Qt6 REQUIRED COMPONENTS Core)
+
+add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
+set_target_properties({{MODULE_NAME}} PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)
+target_link_libraries({{MODULE_NAME}} ahoicpp_externals Qt6::Core)
 target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 target_include_directories({{MODULE_NAME}} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/{{MODULE_NAME}})
 ]]

@@ -6,6 +6,19 @@ local escafandro = require("ahoicpp.escafandro")
 
 local M = {}
 
+local function project_uses_qt6()
+	local sep = package.config:sub(1, 1)
+	local path = "." .. sep .. "ahoicpp_project.json"
+	if not utils.file_exists(path) then
+		return false
+	end
+	local ok, decoded = pcall(vim.json.decode, utils.read_file(path))
+	if not ok or type(decoded) ~= "table" then
+		return false
+	end
+	return decoded.use_qt6 == true
+end
+
 local function create_prompt_dialog(title, prompt_text, callback, start_insert)
 	local buf = vim.api.nvim_create_buf(false, true)
 
@@ -152,16 +165,37 @@ function M.create_module_input()
 		return
 	end
 
-	create_prompt_dialog("AhoiCpp Add Module", "Module Name: ", function(input)
-		if input and utils.is_valid_class_name(input) then
-			if config.options.add_tests then
-				M.clone_google_test()
+	local function ask_and_create()
+		create_prompt_dialog("AhoiCpp Add Module", "Module Name: ", function(input)
+			if input and utils.is_valid_class_name(input) then
+				if config.options.add_tests then
+					M.clone_google_test()
+				end
+				project.create_module(input, "Modules", M.pending_use_qt6 == true)
+				M.pending_use_qt6 = nil
+			else
+				vim.notify("Invalid class name provided.", vim.log.levels.WARN)
 			end
-			project.create_module(input, "Modules")
-		else
-			vim.notify("Invalid class name provided.", vim.log.levels.WARN)
-		end
-	end)
+		end)
+	end
+
+	if project_uses_qt6() then
+		dialogs.create_yes_no_dialog({
+			"",
+			"This project is configured to use Qt6.",
+			"Do you want to create a Qt6 class?",
+			"",
+		}, function(confirmed)
+			if confirmed == nil then
+				return
+			end
+			M.pending_use_qt6 = confirmed
+			ask_and_create()
+		end)
+	else
+		M.pending_use_qt6 = false
+		ask_and_create()
+	end
 end
 
 function M.clone_external()
@@ -372,10 +406,27 @@ function M.create_module_directory_input()
 				vim.fn.prompt_setcallback(buf2, function(input2)
 					vim.api.nvim_win_close(win2, true)
 					if input2 and input2 ~= "" and utils.is_valid_class_name(input2) then
-						if config.options.add_tests then
-							M.clone_google_test()
+						local function do_create(use_qt6)
+							if config.options.add_tests then
+								M.clone_google_test()
+							end
+							project.create_module(input2, directory_name, use_qt6 == true)
 						end
-						project.create_module(input2, directory_name)
+						if project_uses_qt6() then
+							dialogs.create_yes_no_dialog({
+								"",
+								"This project is configured to use Qt6.",
+								"Do you want to create a Qt6 class?",
+								"",
+							}, function(confirmed)
+								if confirmed == nil then
+									return
+								end
+								do_create(confirmed)
+							end)
+						else
+							do_create(false)
+						end
 					else
 						vim.notify("Invalid module name provided.", vim.log.levels.ERROR)
 					end

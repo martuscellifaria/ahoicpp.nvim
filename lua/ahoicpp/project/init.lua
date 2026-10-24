@@ -155,7 +155,7 @@ function M.create_main(main_name, use_qt)
 		end)
 	end
 end
-function M.create_module(module_name, parent_directory_name)
+function M.create_module(module_name, parent_directory_name, use_qt6)
 	local sep = package.config:sub(1, 1)
 
 	if not fs.dir_exists("." .. sep .. parent_directory_name) then
@@ -190,6 +190,9 @@ function M.create_module(module_name, parent_directory_name)
 	-- TODOS open ahoicpp_project.json, look after use_qt6 and then if true ask if the module a qt module is.
 	-- If so, add the cmakelists with qt6
 	local cmake_template = templates.get_module_cmake_template()
+	if use_qt6 then
+		cmake_template = templates.get_module_cmake_template_with_qt6()
+	end
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	if config.options.add_tests then
@@ -222,6 +225,9 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".h"
 	local header_template = templates.get_header_template()
+	if use_qt6 then
+		header_template = templates.get_header_template_with_qt6()
+	end
 	header_template = header_template:gsub("{{MODULE_NAME}}", module_name)
 	local ok = fs.write_file(header_path, header_template)
 	if ok then
@@ -239,6 +245,9 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".cpp"
 	local cpp_template = templates.get_cpp_template()
+	if use_qt6 then
+		cpp_template = templates.get_cpp_template_with_qt6()
+	end
 	cpp_template = cpp_template:gsub("{{MODULE_NAME}}", module_name)
 	ok = fs.write_file(cpp_path, cpp_template)
 	if ok then
