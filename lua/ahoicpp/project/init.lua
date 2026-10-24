@@ -39,6 +39,9 @@ function M.create_main(main_name, use_qt)
 	else
 		project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
 	end
+	if use_qt then
+		project_json_template = project_json_template:gsub('"use_qt6": false', '"use_qt6": true')
+	end
 	fs.write_file("." .. sep .. "ahoicpp_project.json", project_json_template)
 
 	local cpp_version = config.options.cpp_version
@@ -152,7 +155,7 @@ function M.create_main(main_name, use_qt)
 		end)
 	end
 end
-function M.create_module(module_name, parent_directory_name)
+function M.create_module(module_name, parent_directory_name, use_qt6)
 	local sep = package.config:sub(1, 1)
 
 	if not fs.dir_exists("." .. sep .. parent_directory_name) then
@@ -183,7 +186,13 @@ function M.create_module(module_name, parent_directory_name)
 		vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
 		cpp_version = 23
 	end
+
+	-- TODOS open ahoicpp_project.json, look after use_qt6 and then if true ask if the module a qt module is.
+	-- If so, add the cmakelists with qt6
 	local cmake_template = templates.get_module_cmake_template()
+	if use_qt6 then
+		cmake_template = templates.get_module_cmake_template_with_qt6()
+	end
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	if config.options.add_tests then
@@ -216,6 +225,9 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".h"
 	local header_template = templates.get_header_template()
+	if use_qt6 then
+		header_template = templates.get_header_template_with_qt6()
+	end
 	header_template = header_template:gsub("{{MODULE_NAME}}", module_name)
 	local ok = fs.write_file(header_path, header_template)
 	if ok then
@@ -233,6 +245,9 @@ function M.create_module(module_name, parent_directory_name)
 		.. module_name
 		.. ".cpp"
 	local cpp_template = templates.get_cpp_template()
+	if use_qt6 then
+		cpp_template = templates.get_cpp_template_with_qt6()
+	end
 	cpp_template = cpp_template:gsub("{{MODULE_NAME}}", module_name)
 	ok = fs.write_file(cpp_path, cpp_template)
 	if ok then
@@ -252,8 +267,15 @@ function M.create_module(module_name, parent_directory_name)
 	if fs.file_exists("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake") then
 		local subdirs_text = fs.read_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake")
 		if subdirs_text then
-			if not string.find(subdirs_text, "target_link_libraries(" .. module_name .. ")", 1, true) then
-				subdirs_text = subdirs_text .. "\ntarget_link_libraries(" .. module_name .. ")"
+			if
+				not string.find(
+					subdirs_text,
+					"target_link_libraries(${PROJECT_NAME} PRIVATE " .. module_name .. ")",
+					1,
+					true
+				)
+			then
+				subdirs_text = subdirs_text .. "\ntarget_link_libraries(${PROJECT_NAME} PRIVATE " .. module_name .. ")"
 				fs.update_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake", subdirs_text)
 			end
 		end
