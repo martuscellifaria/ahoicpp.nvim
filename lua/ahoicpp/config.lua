@@ -19,6 +19,7 @@ M.defaults = {
 		toggle_autocompile = "<leader>cpt",
 		toggle_debug_compilation = "<leader>cpb",
 		execute_app = "<leader>cpx",
+		start_devcontainer = "<leader>cps",
 		escafandro_coding = "<leader>cec",
 		escafandro_explain = "<leader>cee",
 		toggle_escafandro_debug_assist = "<leader>cet",

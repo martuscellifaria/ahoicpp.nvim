@@ -94,6 +94,7 @@ function M.get_directories()
 				and not name:match("^%.")
 				and name ~= "App"
 				and name ~= "build"
+				and name ~= "cmake"
 				and name ~= "externals"
 			then
 				table.insert(dirs, name)
@@ -102,30 +103,6 @@ function M.get_directories()
 	end
 	table.sort(dirs)
 	return dirs
-end
-
-function M.get_fetcher_scripts()
-	local cwd = vim.fn.getcwd()
-	local fetchers_dir = cwd .. "/.fetchers"
-
-	if vim.fn.isdirectory(fetchers_dir) == 0 then
-		vim.notify("Directory .fetchers does not exist", vim.log.levels.WARN)
-		return {}
-	end
-
-	local files = vim.fn.readdir(fetchers_dir)
-	local file_list = {}
-
-	for _, file in ipairs(files) do
-		local full_path = fetchers_dir .. "/" .. file
-		if vim.fn.filereadable(full_path) == 1 then
-			local file_name = vim.fn.fnamemodify(file, ":t")
-			if vim.endswith(file_name, "_fetcher.py") then
-				table.insert(file_list, file_name)
-			end
-		end
-	end
-	return file_list
 end
 
 function M.create_dir(path)

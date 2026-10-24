@@ -23,7 +23,7 @@ function M.create_class(class_name, output_dir)
 	end
 end
 
-function M.create_main(main_name)
+function M.create_main(main_name, use_qt)
 	local sep = package.config:sub(1, 1)
 	local app_path = "." .. sep .. "App" .. sep .. "src"
 	fs.create_dir(app_path)
@@ -33,21 +33,14 @@ function M.create_main(main_name)
 	readme_template = readme_template:gsub("{{PROJECT_NAME}}", main_name)
 	fs.write_file("." .. sep .. "README.md", readme_template)
 
-	local sourced_file = debug.getinfo(1, "S").source:sub(2)
-	local source_dir = vim.fn.fnamemodify(sourced_file, ":h:h") .. sep .. "fetcher_scripts"
-	local target_dir = vim.fn.getcwd() .. sep .. ".fetchers"
-	local files = vim.fn.glob(source_dir .. "/*.py", false, true)
-	for _, file in ipairs(files) do
-		local filename = vim.fn.fnamemodify(file, ":t")
-		local target = target_dir .. "/" .. filename
-		vim.uv.fs_copyfile(file, target)
-	end
-
 	local project_json_template = templates.get_project_json_template()
 	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
 		project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name .. ".exe")
 	else
 		project_json_template = project_json_template:gsub("{{PROJECT_NAME}}", main_name)
+	end
+	if use_qt then
+		project_json_template = project_json_template:gsub('"use_qt6": false', '"use_qt6": true')
 	end
 	fs.write_file("." .. sep .. "ahoicpp_project.json", project_json_template)
 
@@ -57,7 +50,19 @@ function M.create_main(main_name)
 		cpp_version = 23
 	end
 	local main_path = app_path .. sep .. main_name .. ".cpp"
-	fs.write_file(main_path, templates.get_main_template(cpp_version))
+	if use_qt then
+		local qt_main_file = templates.get_main_template_qt()
+		qt_main_file = qt_main_file:gsub("{{PROJECT_NAME}}", main_name)
+		fs.write_file(main_path, qt_main_file)
+		local qml_path = "." .. sep .. "App" .. sep .. "qml"
+		fs.create_dir(qml_path)
+		local qml_main_path = qml_path .. sep .. "Main.qml"
+		local main_qml_file = templates.get_main_qml_template_qt()
+		main_qml_file = main_qml_file:gsub("{{PROJECT_NAME}}", main_name)
+		fs.write_file(qml_main_path, main_qml_file)
+	else
+		fs.write_file(main_path, templates.get_main_template(cpp_version))
+	end
 	vim.cmd("edit " .. main_path)
 
 	fs.write_file("." .. sep .. "App" .. sep .. "version.c.in", templates.get_version_c_in())
@@ -68,7 +73,7 @@ function M.create_main(main_name)
 	fs.write_file("." .. sep .. ".clangd", templates.get_clangd_template())
 	fs.write_file(
 		"." .. sep .. "AhoiCppProject.cmake",
-		"#Created automagically by AhoiCpp. Please do not modify this file."
+		"# Created automagically by AhoiCpp. Please do not modify this file."
 	)
 
 	local cmake_template = templates.get_parent_cmake_template()
@@ -77,37 +82,44 @@ function M.create_main(main_name)
 
 	fs.write_file(
 		"." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake",
-		"#Created automagically by AhoiCpp. Please do not modify this file."
+		"# Created automagically by AhoiCpp. Please do not modify this file."
 	)
 	fs.write_file("." .. sep .. "AhoiCppExternals.cmake", templates.get_ahoi_externals_template())
 
-	cmake_template = templates.get_app_cmake_template()
+	if use_qt then
+		cmake_template = templates.get_app_cmake_template_qt()
+	else
+		cmake_template = templates.get_app_cmake_template()
+	end
 	cmake_template = cmake_template:gsub("{{PROJECT_NAME}}", main_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
 	fs.write_file("." .. sep .. "App" .. sep .. "CMakeLists.txt", cmake_template)
-	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
 
-	-- Cross-compile utils and docker
+	fs.write_file("." .. sep .. "build.py", templates.get_buildscript())
 	fs.create_dir("." .. sep .. "cmake")
+	fs.write_file("." .. sep .. "Dockerfile", templates.get_cross_compile_dockerfile_template())
+
+	cmake_template = templates.get_toolchain_x86_64_linux()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_aarch64_linux()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_x86_64_windows()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake", cmake_template)
+
+	cmake_template = templates.get_toolchain_aarch64_windows()
+	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
+	fs.write_file("." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake", cmake_template)
+
+	fs.write_file("." .. sep .. "start_devcontainer.sh", templates.get_start_devcontainer_script())
 	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-aarch64-linux.cmake",
-		templates.get_cmake_toolchain_aarch64_linux_template()
+		"." .. sep .. "cross_compile_in_devcontainer.sh",
+		templates.get_cross_compile_in_devcontainer_script()
 	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-x86_64-linux.cmake",
-		templates.get_cmake_toolchain_x86_64_linux_template()
-	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-windows-x86_64.cmake",
-		templates.get_cmake_toolchain_windows_x86_64_template()
-	)
-	fs.write_file(
-		"." .. sep .. "cmake" .. sep .. "toolchain-windows-arm64.cmake",
-		templates.get_cmake_toolchain_windows_arm64_template()
-	)
-	fs.write_file("." .. sep .. "Dockerfile", templates.get_cross_compile_dockerfile())
-	fs.write_file("." .. sep .. "start_devcontainer.sh", templates.get_start_devcontainer_template())
-	fs.write_file("." .. sep .. "cross_compile_in_devcontainer.sh", templates.get_cross_compile_in_devcontainer())
 
 	if config.options.autocompile_on_create then
 		require("ahoicpp.build").compile()
@@ -174,6 +186,9 @@ function M.create_module(module_name, parent_directory_name)
 		vim.notify("Version " .. cpp_version .. " does not exist. Defaulting to C++ 23.", vim.log.levels.WARN)
 		cpp_version = 23
 	end
+
+	-- TODOS open ahoicpp_project.json, look after use_qt6 and then if true ask if the module a qt module is.
+	-- If so, add the cmakelists with qt6
 	local cmake_template = templates.get_module_cmake_template()
 	cmake_template = cmake_template:gsub("{{MODULE_NAME}}", module_name)
 	cmake_template = cmake_template:gsub("{{CPP_VERSION}}", cpp_version)
@@ -244,9 +259,14 @@ function M.create_module(module_name, parent_directory_name)
 		local subdirs_text = fs.read_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake")
 		if subdirs_text then
 			if
-				not string.find(subdirs_text, "target_link_libraries(${PROJECT_NAME} " .. module_name .. ")", 1, true)
+				not string.find(
+					subdirs_text,
+					"target_link_libraries(${PROJECT_NAME} PRIVATE " .. module_name .. ")",
+					1,
+					true
+				)
 			then
-				subdirs_text = subdirs_text .. "\ntarget_link_libraries(${PROJECT_NAME} " .. module_name .. ")"
+				subdirs_text = subdirs_text .. "\ntarget_link_libraries(${PROJECT_NAME} PRIVATE " .. module_name .. ")"
 				fs.update_file("." .. sep .. "App" .. sep .. "AhoiCppSubdirs.cmake", subdirs_text)
 			end
 		end

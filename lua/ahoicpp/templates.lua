@@ -131,6 +131,59 @@ even creates a python script for building your project.";
 ]]
 end
 
+function M.get_main_template_qt()
+	return [[#include "version.h"
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/file.h>
+    #include <unistd.h>
+    #include <cerrno>
+#endif
+
+extern const char* embedded_version;
+
+int main(int argc, char *argv[]) {
+    QGuiApplication app(argc, argv);
+
+    QQmlApplicationEngine engine;
+    QObject::connect(
+        &engine, &QQmlApplicationEngine::objectCreationFailed,
+        &app, []() { QCoreApplication::exit(-1); },
+        Qt::QueuedConnection);
+
+    engine.loadFromModule("{{PROJECT_NAME}}Qml", "Main");
+
+    return app.exec();
+}
+    ]]
+end
+
+function M.get_main_qml_template_qt()
+	return [[import QtQuick
+import QtQuick.Controls
+
+ApplicationWindow {
+    visible: true
+    width: 400
+    height: 200
+    title: "{{PROJECT_NAME}}"
+
+    Label {
+        anchors.centerIn: parent
+        text: "AhoiCpp is a tool for setting a C++ development environment in Neovim.\n\
+\nC++ is a challenging language, specially for newcomers.\n\
+This is my take on making it easier to hop along.\n\
+\nAhoiCpp can set up classes, cmake files, app entrypoints and\n\
+even creates a python script for building your project.";
+        font.pixelSize: 12
+    }
+}]]
+end
+
 function M.get_parent_cmake_template()
 	return [[cmake_minimum_required(VERSION 3.28)
 
@@ -142,12 +195,12 @@ endif()
 if(DEFINED COMPANY_ARG)
 	set(PROJECT_COMPANY ${COMPANY_ARG})
 else()
-	set(PROJECT_COMPANY "Ahoi Labs") 
+	set(PROJECT_COMPANY "AhoiTools") 
 endif()
 if(DEFINED DESCRIPTION_ARG)
 	set(PROJECT_DESCRIPTION ${DESCRIPTION_ARG})
 else()
-	set(PROJECT_DESCRIPTION "Your project is owned by Ahoi Labs") 
+	set(PROJECT_DESCRIPTION "Your project is owned by AhoiTools") 
 endif()
 
 project({{PROJECT_NAME}} VERSION ${PROJECT_VERSION})
@@ -198,10 +251,79 @@ configure_file(
 add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
 target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries({{PROJECT_NAME}} ahoicpp_externals)
-target_link_libraries({{PROJECT_NAME}} ahoicpp_externals ${AHOICPP_EXTERNALS_TARGETS})
-target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 include(AhoiCppSubdirs.cmake)
+
+add_library(ahoicpp_externals_iface INTERFACE)
+target_link_libraries(ahoicpp_externals_iface INTERFACE ahoicpp_externals)
+target_link_libraries(ahoicpp_externals_iface INTERFACE ${AHOICPP_EXTERNALS_TARGETS})
+target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
+
+target_link_libraries({{PROJECT_NAME}} PRIVATE
+    ahoicpp_externals_iface
+)
+
+if(WIN32)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc
+        @ONLY
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.rc)
+else()
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.c
+        @ONLY
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)
+endif()
+]]
+end
+
+function M.get_app_cmake_template_qt()
+	return [[cmake_minimum_required(VERSION 3.28)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h
+    @ONLY
+)
+
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
+qt_standard_project_setup()
+
+qt_add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
+target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+file(GLOB_RECURSE PROJECT_QML_FILES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/qml/*.qml
+)
+
+foreach(f IN LISTS PROJECT_QML_FILES)
+    file(RELATIVE_PATH _rel "${CMAKE_CURRENT_SOURCE_DIR}" "${f}")
+    set_source_files_properties("${f}" PROPERTIES
+        QT_RESOURCE_ALIAS "${_rel}")
+endforeach()
+
+qt_add_qml_module(
+    {{PROJECT_NAME}}
+    URI {{PROJECT_NAME}}Qml
+    VERSION 1.0
+    QML_FILES ${PROJECT_QML_FILES}
+)
+
+include(AhoiCppSubdirs.cmake)
+
+add_library(ahoicpp_externals_interface INTERFACE)
+target_link_libraries(ahoicpp_externals_interface INTERFACE ahoicpp_externals)
+target_link_libraries(ahoicpp_externals_interface INTERFACE ${AHOICPP_EXTERNALS_TARGETS})
+
+target_link_libraries({{PROJECT_NAME}} PRIVATE
+    ahoicpp_externals_interface
+    Qt6::Quick
+)
+
+target_compile_features({{PROJECT_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
 
 if(WIN32)
     configure_file(
@@ -340,15 +462,15 @@ if __name__ == '__main__':
                 print("Invalid input. Bye.")
     elif (sys.argv[1] == "debug"):
         version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
-        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        company = sys.argv[3] if len(sys.argv) > 3 else "AhoiTools"
         description = sys.argv[4] if len(
-            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+            sys.argv) > 4 else "Your project is owned by AhoiTools."
         run_app("RelWithDebInfo", version, company, description)
     else:
         version = sys.argv[2] if len(sys.argv) > 2 else "99.99.99"
-        company = sys.argv[3] if len(sys.argv) > 3 else "Ahoi Labs"
+        company = sys.argv[3] if len(sys.argv) > 3 else "AhoiTools"
         description = sys.argv[4] if len(
-            sys.argv) > 4 else "Your project is owned by Ahoi Labs."
+            sys.argv) > 4 else "Your project is owned by AhoiTools."
         run_app("Release", version, company, description)
 ]]
 end
@@ -431,6 +553,7 @@ end
 
 function M.get_gitignore()
 	return [[build/
+cross-build/
 compile_commands.json
 
 .vscode/
@@ -502,16 +625,24 @@ function M.get_project_json_template()
 	"execution_path": "./build/App/",
 	"build_as": "release",
 	"version": "99.99.99",
-	"company": "Ahoi Labs",
-	"description": "Your project is owned by Ahoi Labs"
+	"company": "AhoiTools",
+	"description": "Your project is owned by AhoiTools",
+	"use_qt6": false
 }]]
 end
 
-function M.get_cross_compile_dockerfile()
+function M.get_cross_compile_dockerfile_template()
 	return [[FROM ubuntu:26.04
 
-RUN apt-get update && apt-get install -y \
+ARG DEBIAN_FRONTEND=noninteractive
+ARG LLVM_MINGW_VERSION=20260616
+ARG LLVM_MINGW_UBUNTU=22.04
+
+ENV XWIN=/opt/xwin
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     cmake \
     ninja-build \
     git \
@@ -525,8 +656,18 @@ RUN apt-get update && apt-get install -y \
     clang \
     lld \
     llvm \
+    clang-tools \
+    cargo \
+    rustc \
+    libjpeg8 \
+    libwebp7 \
+    libwebpmux3 \
+    libwebpdemux2 \
+    libpng16-16 \
+    libtiff6 \
     unzip \
     wget \
+    curl \
     xz-utils \
     file \
     && rm -rf /var/lib/apt/lists/*
@@ -538,47 +679,91 @@ RUN ARCH=$(uname -m) && \
         x86_64|amd64) SUFFIX="x86_64" ;; \
         *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
     esac && \
-    echo "Downloading LLVM-mingw for $SUFFIX" && \
-    wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
-    tar -xf llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz -C /opt && \
-    rm llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}.tar.xz && \
-    echo "${SUFFIX}" > /opt/llvm-mingw-arch.txt && \
-    echo "LLVM-mingw installed for architecture: $SUFFIX"
+    LLVM_MINGW_DIR="/opt/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}" && \
+    LLVM_MINGW_ARCHIVE="llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-${LLVM_MINGW_UBUNTU}-${SUFFIX}.tar.xz" && \
+    wget -q "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/${LLVM_MINGW_ARCHIVE}" && \
+    tar -xf "${LLVM_MINGW_ARCHIVE}" -C /opt && \
+    rm "${LLVM_MINGW_ARCHIVE}" && \
+    printf '%s\n' "${SUFFIX}" > /opt/llvm-mingw-arch.txt && \
+    test -x "${LLVM_MINGW_DIR}/bin/clang++"
 
 RUN SUFFIX=$(cat /opt/llvm-mingw-arch.txt) && \
-    DIR="/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${SUFFIX}" && \
-    echo "Creating wrappers from: $DIR" && \
-    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target x86_64-w64-mingw32 "$@"' > /usr/local/bin/mingw-clang++ && \
-    chmod +x /usr/local/bin/mingw-clang++ && \
-    echo '#!/bin/bash\n'${DIR}'/bin/clang++ -target aarch64-w64-mingw32 "$@"' > /usr/local/bin/mingw-arm64-clang++ && \
-    chmod +x /usr/local/bin/mingw-arm64-clang++
+    LLVM_MINGW_DIR="/opt/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-${LLVM_MINGW_UBUNTU}-${SUFFIX}" && \
+    printf '#!/usr/bin/env bash\nexec "%s/bin/clang++" --target=x86_64-w64-mingw32 "$@"\n' "${LLVM_MINGW_DIR}" > /usr/local/bin/mingw-clang++ && \
+    printf '#!/usr/bin/env bash\nexec "%s/bin/clang++" --target=aarch64-w64-mingw32 "$@"\n' "${LLVM_MINGW_DIR}" > /usr/local/bin/mingw-arm64-clang++ && \
+    chmod +x /usr/local/bin/mingw-clang++ /usr/local/bin/mingw-arm64-clang++
 
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-16 100 \
     && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-16 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-16 100
 
-WORKDIR /workspace
-COPY test.sh /workspace/test.sh
-RUN chmod +x /workspace/test.sh
+RUN cargo install xwin --locked && \
+    rm -rf /opt/xwin /opt/.xwin-cache && \
+    cd /opt && \
+    xwin --accept-license splat --output /opt/xwin && \
+    test -f /opt/xwin/crt/include/vector && \
+    test -f /opt/xwin/crt/lib/x86_64/libcmt.lib && \
+    test -f /opt/xwin/crt/lib/x86_64/oldnames.lib && \
+    test -f /opt/xwin/sdk/lib/ucrt/x86_64/ucrt.lib && \
+    find /opt/xwin -iname 'msvcrt.lib' -print -quit | grep -q .
 
-COPY cmake/ /cmake/
+RUN command -v clang-cl && \
+    command -v lld-link && \
+    command -v llvm-rc && \
+    clang-cl --version && \
+    lld-link --version && \
+    xwin --version
+
 CMD ["/bin/bash"]
 ]]
 end
 
-function M.get_cmake_toolchain_aarch64_linux_template()
+function M.get_toolchain_x86_64_linux()
 	return [[set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_SYSTEM_PROCESSOR x86_64_linux)
 
-set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc-16)
-set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++-16)
+find_program(CROSS_GCC x86_64-linux-gnu-gcc-16)
+find_program(CROSS_GXX x86_64-linux-gnu-g++-16)
 
-set(CMAKE_CXX_STANDARD 23)
+if(NOT CROSS_GCC OR NOT CROSS_GXX)
+    message(FATAL_ERROR "x86_64 Linux cross-compiler not found")
+endif()
+
+set(CMAKE_C_COMPILER ${CROSS_GCC})
+set(CMAKE_CXX_COMPILER ${CROSS_GXX})
+
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_FIND_ROOT_PATH /usr/aarch64-linux-gnu)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+]]
+end
+
+function M.get_toolchain_aarch64_linux()
+	return [[set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64_linux)
+
+find_program(CROSS_GCC aarch64-linux-gnu-gcc-16)
+find_program(CROSS_GXX aarch64-linux-gnu-g++-16)
+
+if(NOT CROSS_GCC OR NOT CROSS_GXX)
+    message(FATAL_ERROR "ARM64 Linux cross-compiler not found")
+endif()
+
+set(CMAKE_C_COMPILER ${CROSS_GCC})
+set(CMAKE_CXX_COMPILER ${CROSS_GXX})
+
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libstdc++ -static-libgcc")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -586,36 +771,107 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ]]
 end
 
-function M.get_cmake_toolchain_x86_64_linux_template()
-	return [[set(CMAKE_SYSTEM_NAME Linux)
+function M.get_toolchain_x86_64_windows()
+	return [[set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-set(CMAKE_C_COMPILER x86_64-linux-gnu-gcc-16)
-set(CMAKE_CXX_COMPILER x86_64-linux-gnu-g++-16)
+set(XWIN_ROOT "/opt/xwin")
+set(LLVM_ROOT "/usr/lib/llvm-21")
+set(TARGET_TRIPLE "x86_64-pc-windows-msvc")
 
-set(CMAKE_CXX_STANDARD 23)
+set(XWIN_CRT_INCLUDE "${XWIN_ROOT}/crt/include")
+set(XWIN_CRT_LIB "${XWIN_ROOT}/crt/lib/x86_64")
+
+set(XWIN_SDK_INCLUDE "${XWIN_ROOT}/sdk/include")
+set(XWIN_SDK_LIB "${XWIN_ROOT}/sdk/lib")
+
+set(XWIN_SDK_UCRT_INCLUDE "${XWIN_SDK_INCLUDE}/ucrt")
+set(XWIN_SDK_SHARED_INCLUDE "${XWIN_SDK_INCLUDE}/shared")
+set(XWIN_SDK_UM_INCLUDE "${XWIN_SDK_INCLUDE}/um")
+set(XWIN_SDK_WINRT_INCLUDE "${XWIN_SDK_INCLUDE}/winrt")
+set(XWIN_SDK_CPPWINRT_INCLUDE "${XWIN_SDK_INCLUDE}/cppwinrt")
+
+set(XWIN_SDK_UCRT_LIB "${XWIN_SDK_LIB}/ucrt/x86_64")
+set(XWIN_SDK_UM_LIB "${XWIN_SDK_LIB}/um/x86_64")
+
+if(NOT EXISTS "${XWIN_CRT_INCLUDE}/vector")
+    message(FATAL_ERROR "xwin C++ headers not found: ${XWIN_CRT_INCLUDE}")
+endif()
+
+if(NOT EXISTS "${XWIN_SDK_UM_INCLUDE}/windows.h")
+    message(FATAL_ERROR "Windows SDK headers not found: ${XWIN_SDK_UM_INCLUDE}")
+endif()
+
+if(NOT EXISTS "${XWIN_CRT_LIB}/libcmt.lib")
+    message(FATAL_ERROR "xwin CRT libraries not found: ${XWIN_CRT_LIB}")
+endif()
+
+if(NOT EXISTS "${XWIN_CRT_LIB}/oldnames.lib")
+    message(FATAL_ERROR "xwin oldnames.lib not found: ${XWIN_CRT_LIB}")
+endif()
+
+if(NOT EXISTS "${LLVM_ROOT}/bin/clang-cl")
+    message(FATAL_ERROR "clang-cl not found: ${LLVM_ROOT}/bin/clang-cl")
+endif()
+
+if(NOT EXISTS "${LLVM_ROOT}/bin/lld-link")
+    message(FATAL_ERROR "lld-link not found: ${LLVM_ROOT}/bin/lld-link")
+endif()
+
+set(CMAKE_C_COMPILER "${LLVM_ROOT}/bin/clang-cl")
+set(CMAKE_CXX_COMPILER "${LLVM_ROOT}/bin/clang-cl")
+set(CMAKE_LINKER "${LLVM_ROOT}/bin/lld-link")
+
+set(CMAKE_C_COMPILER_TARGET "${TARGET_TRIPLE}")
+set(CMAKE_CXX_COMPILER_TARGET "${TARGET_TRIPLE}")
+
+set(CMAKE_RC_COMPILER "${LLVM_ROOT}/bin/llvm-rc")
+set(CMAKE_AR "${LLVM_ROOT}/bin/llvm-lib")
+set(CMAKE_C_COMPILER_AR "${LLVM_ROOT}/bin/llvm-lib")
+set(CMAKE_CXX_COMPILER_AR "${LLVM_ROOT}/bin/llvm-lib")
+
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+
+set(CMAKE_C_FLAGS_INIT "/imsvc ${XWIN_CRT_INCLUDE} /imsvc ${XWIN_SDK_UCRT_INCLUDE} /imsvc ${XWIN_SDK_SHARED_INCLUDE} /imsvc ${XWIN_SDK_UM_INCLUDE} /imsvc ${XWIN_SDK_WINRT_INCLUDE} /imsvc ${XWIN_SDK_CPPWINRT_INCLUDE}")
+
+set(CMAKE_CXX_FLAGS_INIT "${CMAKE_C_FLAGS_INIT} -clang:-Wno-error=character-conversion")
+set(CMAKE_RC_FLAGS_INIT "-I${XWIN_CRT_INCLUDE} -I${XWIN_SDK_UCRT_INCLUDE} -I${XWIN_SDK_SHARED_INCLUDE} -I${XWIN_SDK_UM_INCLUDE} -I${XWIN_SDK_WINRT_INCLUDE} -I${XWIN_SDK_CPPWINRT_INCLUDE}")
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld-link /libpath:${XWIN_CRT_LIB} /libpath:${XWIN_SDK_UCRT_LIB} /libpath:${XWIN_SDK_UM_LIB}")
+
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
+set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT}")
+
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_FIND_ROOT_PATH /usr/x86_64-linux-gnu)
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ]]
 end
 
-function M.get_cmake_toolchain_windows_arm64_template()
+function M.get_toolchain_aarch64_windows()
 	return [[set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR arm64)
 
-if(DEFINED ENV{LLVM_MINGW_SUFFIX})
-    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
-else()
+execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE HOST_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(HOST_ARCH STREQUAL "x86_64")
     set(LLVM_SUFFIX "x86_64")
+else()
+    set(LLVM_SUFFIX "aarch64")
 endif()
 
 set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+if(NOT EXISTS "${LLVM_MINGW_PATH}/bin/clang")
+    message(FATAL_ERROR "llvm-mingw not found at ${LLVM_MINGW_PATH}")
+endif()
 
 set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
 set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
@@ -634,78 +890,44 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD {{CPP_VERSION}})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static -fuse-ld=lld")
+set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -static")
+set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingwex -lmsvcrt -lucrt")
 ]]
 end
 
-function M.get_cmake_toolchain_windows_x86_64_template()
-	return [[set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
+function M.get_start_devcontainer_script()
+	return [[if [ -f /.dockerenv ]; then
+    echo "You are already in a Docker container. Aborting."
+    exit 1
+fi
 
-if(DEFINED ENV{LLVM_MINGW_SUFFIX})
-    set(LLVM_SUFFIX $ENV{LLVM_MINGW_SUFFIX})
-else()
-    set(LLVM_SUFFIX "x86_64")
-endif()
-
-set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
-
-set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
-set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
-
-set(CMAKE_C_COMPILER_TARGET x86_64-w64-mingw32)
-set(CMAKE_CXX_COMPILER_TARGET x86_64-w64-mingw32)
-
-set(CMAKE_RC_COMPILER ${LLVM_MINGW_PATH}/bin/llvm-rc)
-set(CMAKE_AR ${LLVM_MINGW_PATH}/bin/llvm-ar)
-set(CMAKE_RANLIB ${LLVM_MINGW_PATH}/bin/llvm-ranlib)
-set(CMAKE_LINKER ${LLVM_MINGW_PATH}/bin/lld)
-
-set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW_PATH})
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+docker build -t devcontainer .
+docker run -it --rm -v $(pwd):/workspace -w /workspace --user $(id -u):$(id -g) devcontainer
 ]]
 end
 
-function M.get_start_devcontainer_template()
-	return [[docker build -t devcontainer .
-docker run -it --rm -v $(pwd):/workspace -w /workspace devcontainer
-    ]]
-end
+function M.get_cross_compile_in_devcontainer_script()
+	return [[if [ ! -f /.dockerenv ]; then
+    echo "You are not in a Docker container. Aborting."
+    exit 1
+fi
 
-function M.get_cross_compile_in_devcontainer()
-	return [[mkdir -p build/linux-x86_64
-cd build/linux-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-x86_64-linux.cmake -G Ninja
-ninja -j$(nproc)
-cd ../..
-
-mkdir -p build/linux-arm64
-cd build/linux-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-aarch64-linux.cmake -G Ninja
-ninja -j$(nproc)
-cd ../..
-
-mkdir -p build/windows-x86_64
-cd build/windows-x86_64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-x86_64.cmake -G Ninja
-ninja -j$(nproc)
-cd ../..
-
-mkdir -p build/windows-arm64
-cd build/windows-arm64
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-windows-arm64.cmake -G Ninja
-ninja -j$(nproc)
-cd ../..
-	]]
+for config in "linux-x86_64:toolchain-x86_64-linux.cmake" "linux-arm64:toolchain-aarch64-linux.cmake" "windows-x86_64:toolchain-windows-x86_64.cmake" "windows-arm64:toolchain-windows-arm64.cmake"; do
+    build_dir="${config%%:*}"
+    toolchain_file="${config##*:}"
+    echo "Building ${build_dir}..."
+    mkdir -p "cross-build/${build_dir}" || exit 1
+    cd "cross-build/${build_dir}" || exit 1
+    cmake ../.. -DCMAKE_TOOLCHAIN_FILE="../../cmake/${toolchain_file}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja || exit 1
+    ninja > build.log 2>&1
+    cd ../.. || exit 1
+done
+]]
 end
 
 return M

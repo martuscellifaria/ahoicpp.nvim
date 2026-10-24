@@ -24,8 +24,8 @@ function M.compile()
 	local project_data
 	local json_data
 	local version = "99.99.99"
-	local company = "Ahoi Labs"
-	local descripton = "Your project is owned by Ahoi Labs."
+	local company = "AhoiTools"
+	local descripton = "Your project is owned by AhoiTools."
 	if utils.file_exists("ahoicpp_project.json") then
 		project_data = utils.read_file("ahoicpp_project.json")
 		if project_data and project_data ~= "" then
@@ -125,6 +125,17 @@ function M.execute_compiled_binary()
 		end
 	else
 		vim.notify("ahoicpp_project.json file does not exist.", vim.log.levels.WARN)
+	end
+end
+
+function M.start_devcontainer()
+	if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+		vim.notify("Cannot run sh files on Windows. This feature needs at least WSL2.", vim.log.levels.WARN)
+		return
+	end
+	if utils.file_exists("start_devcontainer.sh") then
+		vim.cmd("terminal sh start_devcontainer.sh")
+		vim.cmd("startinsert")
 	end
 end
 
