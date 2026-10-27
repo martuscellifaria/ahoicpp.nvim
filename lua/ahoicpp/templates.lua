@@ -671,7 +671,7 @@ end
 function M.get_module_cmake_template_with_qt6()
 	return [[find_package(Qt6 REQUIRED COMPONENTS Core)
 
-add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp)
+add_library({{MODULE_NAME}} STATIC src/{{MODULE_NAME}}.cpp include/{{MODULE_NAME}}/{{MODULE_NAME}}.h)
 set_target_properties({{MODULE_NAME}} PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)
 target_link_libraries({{MODULE_NAME}} ahoicpp_externals Qt6::Core)
 target_compile_features({{MODULE_NAME}} PUBLIC cxx_std_{{CPP_VERSION}})
