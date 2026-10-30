@@ -910,11 +910,9 @@ Thumbs.db
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-*.cmake
 !AhoiCppExternals.cmake
 !AhoiCppProject.cmake
 !AhoiCppSubdirs.cmake
-!cmake/
 
 App/version.h
 App/version.c
