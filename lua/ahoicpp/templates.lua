@@ -613,8 +613,8 @@ if(QT_KNOWN_POLICY_QTP0001)
     qt_policy(SET QTP0001 NEW)
 endif()
 
-qt_add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+qt_add_executable({{PROJECT_NAME}} src/{{PROJECT_NAME}}.cpp)
+target_include_directories({{PROJECT_NAME}} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB_RECURSE PROJECT_QML_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/qml/*.qml
@@ -627,7 +627,7 @@ foreach(f IN LISTS PROJECT_QML_FILES)
 endforeach()
 
 qt_add_qml_module(
-    ${PROJECT_NAME}
+    {{PROJECT_NAME}}
     URI ${PROJECT_NAME}Qml
     VERSION 1.0
     QML_FILES ${PROJECT_QML_FILES}
@@ -914,6 +914,7 @@ cmake_install.cmake
 !AhoiCppExternals.cmake
 !AhoiCppProject.cmake
 !AhoiCppSubdirs.cmake
+!cmake/
 
 App/version.h
 App/version.c
